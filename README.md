@@ -92,6 +92,10 @@ See [docs/release.md](docs/release.md) for SemVer release PRs, unsigned beta rel
 
 Autoclick is licensed under GPLv2. See [LICENSE](LICENSE).
 
+## Credits
+
+Autoclick was originally created by Mahdi Bchatnia. This maintained fork preserves the original license and project history while continuing development under joelfernandes23.
+
 ## Changelog
 
 ### 3.0.0-beta.1

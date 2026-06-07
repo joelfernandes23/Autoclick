@@ -55,6 +55,10 @@
     NSArray* iconArray;
     NSInteger iconIndex;
     NSTimer* iconTimer;
+
+    NSStatusItem* menuBarStatusItem;
+    NSMenuItem* menuBarStateItem;
+    NSMenuItem* menuBarStartStopItem;
 }
 
 @property (nonatomic, assign) IBOutlet NSWindow *window;
