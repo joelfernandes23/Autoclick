@@ -304,6 +304,7 @@ jobs:
           TAP_TOKEN="${HOMEBREW_TAP_TOKEN:-}"
           CASK_TOKEN="${HOMEBREW_CASK_TOKEN:-autoclick}"
           CASK_PATH="Casks/${CASK_TOKEN}.rb"
+          CASK_RENDERER="$GITHUB_WORKSPACE/scripts/render-homebrew-cask.sh"
           RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/Autoclick-${VERSION}.zip"
           SHA256="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
 
@@ -330,19 +331,12 @@ jobs:
           cd "$RUNNER_TEMP/homebrew-tap"
           mkdir -p Casks
 
-          cat > "$CASK_PATH" <<EOF
-          cask "$CASK_TOKEN" do
-            version "$VERSION"
-            sha256 "$SHA256"
-
-            url "$RELEASE_URL"
-            name "Autoclick"
-            desc "Configurable macOS autoclicker"
-            homepage "https://github.com/${GITHUB_REPOSITORY}"
-
-            app "Autoclick.app"
-          end
-          EOF
+          CASK_TOKEN="$CASK_TOKEN" \
+            VERSION="$VERSION" \
+            SHA256="$SHA256" \
+            RELEASE_URL="$RELEASE_URL" \
+            HOMEPAGE="https://github.com/${GITHUB_REPOSITORY}" \
+            "$CASK_RENDERER" > "$CASK_PATH"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

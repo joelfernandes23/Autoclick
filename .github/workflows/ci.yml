@@ -19,6 +19,33 @@ jobs:
       - name: Show Xcode version
         run: xcodebuild -version
 
+      - name: Validate Homebrew cask template
+        run: |
+          set -euo pipefail
+
+          CASK_PATH="$RUNNER_TEMP/Casks/autoclick.rb"
+          mkdir -p "$(dirname "$CASK_PATH")"
+
+          CASK_TOKEN="autoclick" \
+            VERSION="3.0.0-beta.1" \
+            SHA256="$(printf "Autoclick" | shasum -a 256 | awk '{print $1}')" \
+            RELEASE_URL="https://github.com/joelfernandes23/Autoclick/releases/download/v3.0.0-beta.1/Autoclick-3.0.0-beta.1.zip" \
+            HOMEPAGE="https://github.com/joelfernandes23/Autoclick" \
+            scripts/render-homebrew-cask.sh > "$CASK_PATH"
+
+          ruby -c "$CASK_PATH"
+
+          if command -v brew >/dev/null 2>&1; then
+            TAP_ROOT="$(brew --repository)/Library/Taps/autoclick-ci/homebrew-tap"
+            trap 'rm -rf "$(brew --repository)/Library/Taps/autoclick-ci"' EXIT
+
+            rm -rf "$TAP_ROOT"
+            mkdir -p "$TAP_ROOT/Casks"
+            cp "$CASK_PATH" "$TAP_ROOT/Casks/autoclick.rb"
+
+            brew style --cask "$TAP_ROOT/Casks/autoclick.rb"
+          fi
+
       - name: Resolve packages
         run: |
           xcodebuild -resolvePackageDependencies \

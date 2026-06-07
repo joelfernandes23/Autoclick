@@ -94,6 +94,8 @@ The workflow also supports `HOMEBREW_TAP_TOKEN` as an HTTPS token fallback, but 
 
 When a `v*` tag release succeeds, the workflow writes or updates `Casks/autoclick.rb` in the tap.
 
+The cask file is rendered by `scripts/render-homebrew-cask.sh`, and CI validates the rendered template before each build.
+
 ## Publish The Beta
 
 After CI is green and Apple secrets are configured, run:
