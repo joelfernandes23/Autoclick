@@ -90,6 +90,8 @@
     [[SRGlobalShortcutMonitor sharedMonitor] addAction:shortcutAction forKeyEvent:SRKeyEventTypeDown];
 
     [shortcutRecorder bind:NSValueBinding toObject:_defaults withKeyPath:keyPath options:options];
+
+    [self installMenuBarStatusItem];
     
     // Position the mode button in the titlebar
     NSView *frameView = [[window contentView] superview];
@@ -258,11 +260,15 @@
 - (void)startedClicking {
     [modeButton setEnabled:NO];
     [startStopButton setTitle:@"Stop"];
+    [self updateMenuBarStatus:@"On"];
+    [menuBarStartStopItem setTitle:@"Stop Clicking"];
 }
 
 - (void)stoppedClicking {
     [modeButton setEnabled:YES];
     [startStopButton setTitle:@"Start"];
+    [self updateMenuBarStatus:@"Off"];
+    [menuBarStartStopItem setTitle:@"Start Clicking"];
 }
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
@@ -320,8 +326,46 @@
 #pragma mark - Help & Support
 
 - (IBAction)openGitHub:(id)sender {
-    NSURL *url = [NSURL URLWithString:@"https://github.com/inket/Autoclick"];
+    NSURL *url = [NSURL URLWithString:@"https://github.com/joelfernandes23/Autoclick"];
     [[NSWorkspace sharedWorkspace] openURL:url];
+}
+
+#pragma mark - Menu Bar Status
+
+- (void)installMenuBarStatusItem {
+    menuBarStatusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
+
+    NSStatusBarButton *button = [menuBarStatusItem button];
+    [button setToolTip:@"Autoclick status"];
+
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Autoclick"];
+    menuBarStateItem = [[NSMenuItem alloc] initWithTitle:@"Status: Off" action:nil keyEquivalent:@""];
+    [menuBarStateItem setEnabled:NO];
+    [menu addItem:menuBarStateItem];
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    NSMenuItem *showItem = [[NSMenuItem alloc] initWithTitle:@"Show Autoclick" action:@selector(applicationShouldHandleReopen:) keyEquivalent:@""];
+    [showItem setTarget:self];
+    [menu addItem:showItem];
+
+    menuBarStartStopItem = [[NSMenuItem alloc] initWithTitle:@"Start Clicking" action:@selector(startStop:) keyEquivalent:@""];
+    [menuBarStartStopItem setTarget:self];
+    [menu addItem:menuBarStartStopItem];
+
+    [menu addItem:[NSMenuItem separatorItem]];
+
+    NSMenuItem *quitItem = [[NSMenuItem alloc] initWithTitle:@"Quit Autoclick" action:@selector(terminate:) keyEquivalent:@""];
+    [quitItem setTarget:NSApp];
+    [menu addItem:quitItem];
+
+    [menuBarStatusItem setMenu:menu];
+    [self updateMenuBarStatus:@"Off"];
+}
+
+- (void)updateMenuBarStatus:(NSString *)status {
+    NSStatusBarButton *button = [menuBarStatusItem button];
+    [button setTitle:[NSString stringWithFormat:@"Autoclick: %@", status]];
+    [menuBarStateItem setTitle:[NSString stringWithFormat:@"Status: %@", status]];
 }
 
 #pragma mark - Icon Handling
@@ -330,22 +374,26 @@
     if (DEBUG_ENABLED) NSLog(@"defaultIcon call");
     [iconTimer invalidate];
     [NSApp setApplicationIconImage:[NSImage imageNamed:@"default.icns"]];
+    [self updateMenuBarStatus:@"Off"];
 }
 
 - (void)pausedIcon {
     if (DEBUG_ENABLED) NSLog(@"pausedIcon call");
     [iconTimer invalidate];
     [NSApp setApplicationIconImage:[NSImage imageNamed:@"paused.icns"]];
+    [self updateMenuBarStatus:@"Paused"];
 }
 
 - (void)waitingIcon {
     if (DEBUG_ENABLED) NSLog(@"waitingIcon call");
     [iconTimer invalidate];
     [NSApp setApplicationIconImage:[NSImage imageNamed:@"waiting.icns"]];
+    [self updateMenuBarStatus:@"Waiting"];
 }
 
 - (void)clickingIcon {
     if (DEBUG_ENABLED) NSLog(@"clickingIcon call");
+    [self updateMenuBarStatus:@"On"];
     if (!iconTimer || ![iconTimer isValid])
     {
         iconIndex = 1;
