@@ -18,7 +18,7 @@ cask "$CASK_TOKEN" do
   desc "Configurable autoclicker"
   homepage "$HOMEPAGE"
 
-  depends_on macos: :mojave
+  depends_on macos: :catalina
 
   app "Autoclick.app"
 end
