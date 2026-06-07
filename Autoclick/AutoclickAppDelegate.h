@@ -59,6 +59,10 @@
     NSStatusItem* menuBarStatusItem;
     NSMenuItem* menuBarStateItem;
     NSMenuItem* menuBarStartStopItem;
+    NSImage* menuBarOffImage;
+    NSImage* menuBarActiveImage;
+    NSImage* menuBarPausedImage;
+    NSImage* menuBarWaitingImage;
 }
 
 @property (nonatomic, assign) IBOutlet NSWindow *window;
