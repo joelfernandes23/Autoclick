@@ -19,15 +19,15 @@ This repository is a maintained fork of the original archived Autoclick project.
 
 ## Installation
 
-Release builds will be published through GitHub Releases.
+Release builds are published through GitHub Releases.
 
-Homebrew Cask support is planned through a tap:
+Homebrew Cask support is available through a tap:
 
 ```sh
 brew install --cask joelfernandes23/tap/autoclick
 ```
 
-The Homebrew cask will be enabled once the first signed and notarized release is available.
+Current beta builds are unsigned and not notarized. macOS may show a Gatekeeper warning on first launch.
 
 ## Build From Source
 
@@ -86,7 +86,7 @@ If clicking or shortcuts do not work:
 
 ## Release Process
 
-See [docs/release.md](docs/release.md) for SemVer release PRs, signing, notarization, immutable GitHub Releases, and Homebrew tap setup. See [CHANGELOG.md](CHANGELOG.md) for release notes.
+See [docs/release.md](docs/release.md) for SemVer release PRs, unsigned beta releases, immutable GitHub Releases, and Homebrew tap setup. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## License
 

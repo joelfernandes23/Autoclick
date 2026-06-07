@@ -72,15 +72,8 @@ jobs:
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
           echo "PUBLISH_RELEASE=$PUBLISH_RELEASE" >> "$GITHUB_ENV"
 
-      - name: Validate publish prerequisites
+      - name: Validate publish target
         env:
-          MACOS_CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
-          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
-          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
-          APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
           HOMEBREW_TAP_REPOSITORY: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
           HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
@@ -93,30 +86,16 @@ jobs:
             exit 0
           fi
 
-          missing=()
-
-          [[ -n "${MACOS_CERTIFICATE_P12:-}" ]] || missing+=("MACOS_CERTIFICATE_P12")
-          [[ -n "${MACOS_CERTIFICATE_PASSWORD:-}" ]] || missing+=("MACOS_CERTIFICATE_PASSWORD")
-          [[ -n "${MACOS_KEYCHAIN_PASSWORD:-}" ]] || missing+=("MACOS_KEYCHAIN_PASSWORD")
-          [[ -n "${DEVELOPER_ID_APPLICATION:-}" ]] || missing+=("DEVELOPER_ID_APPLICATION")
-          [[ -n "${APP_STORE_CONNECT_API_KEY_ID:-}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_ID")
-          [[ -n "${APP_STORE_CONNECT_ISSUER_ID:-}" ]] || missing+=("APP_STORE_CONNECT_ISSUER_ID")
-          [[ -n "${APP_STORE_CONNECT_API_KEY_P8:-}" ]] || missing+=("APP_STORE_CONNECT_API_KEY_P8")
-          [[ -n "${HOMEBREW_TAP_REPOSITORY:-}" ]] || missing+=("HOMEBREW_TAP_REPOSITORY")
-
-          if [[ -z "${HOMEBREW_TAP_DEPLOY_KEY:-}" && -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
-            missing+=("HOMEBREW_TAP_DEPLOY_KEY or HOMEBREW_TAP_TOKEN")
-          fi
-
-          if (( ${#missing[@]} > 0 )); then
-            echo "::error::Published releases require these missing secrets or variables: ${missing[*]}"
-            exit 1
-          fi
-
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             echo "Release $TAG_NAME already exists; this run can refresh the Homebrew tap only."
           else
             echo "Release $TAG_NAME does not exist yet; this run will create it."
+          fi
+
+          if [[ -z "${HOMEBREW_TAP_REPOSITORY:-}" ]]; then
+            echo "::warning::HOMEBREW_TAP_REPOSITORY is not configured; this run will skip the Homebrew tap update."
+          elif [[ -z "${HOMEBREW_TAP_DEPLOY_KEY:-}" && -z "${HOMEBREW_TAP_TOKEN:-}" ]]; then
+            echo "::warning::Homebrew tap credentials are not configured; this run will skip the Homebrew tap update."
           fi
 
       - name: Show Xcode version
@@ -137,12 +116,7 @@ jobs:
           set -euo pipefail
 
           if [[ -z "${MACOS_CERTIFICATE_P12:-}" ]]; then
-            if [[ "$PUBLISH_RELEASE" == "true" ]]; then
-              echo "::error::MACOS_CERTIFICATE_P12 is required for published releases."
-              exit 1
-            fi
-
-            echo "No signing certificate configured; artifact-only build will be unsigned."
+            echo "No signing certificate configured; the app will be ad-hoc signed."
             exit 0
           fi
 
@@ -189,12 +163,9 @@ jobs:
           APP_PATH="$RUNNER_TEMP/Autoclick.xcarchive/Products/Applications/Autoclick.app"
 
           if [[ -z "${DEVELOPER_ID_APPLICATION:-}" ]]; then
-            if [[ "$PUBLISH_RELEASE" == "true" ]]; then
-              echo "::error::DEVELOPER_ID_APPLICATION is required for published releases."
-              exit 1
-            fi
-
-            echo "No Developer ID identity configured; skipping codesign."
+            echo "No Developer ID identity configured; applying ad-hoc signature."
+            codesign --force --deep --sign - "$APP_PATH"
+            codesign --verify --strict --deep --verbose=2 "$APP_PATH"
             exit 0
           fi
 
@@ -225,18 +196,19 @@ jobs:
 
       - name: Notarize app
         env:
+          DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
           APP_STORE_CONNECT_API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_API_KEY_P8: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
         run: |
           set -euo pipefail
 
-          if [[ -z "${APP_STORE_CONNECT_API_KEY_ID:-}" || -z "${APP_STORE_CONNECT_ISSUER_ID:-}" || -z "${APP_STORE_CONNECT_API_KEY_P8:-}" ]]; then
-            if [[ "$PUBLISH_RELEASE" == "true" ]]; then
-              echo "::error::App Store Connect notarization credentials are required for published releases."
-              exit 1
-            fi
+          if [[ -z "${DEVELOPER_ID_APPLICATION:-}" ]]; then
+            echo "Developer ID signing is not configured; skipping notarization."
+            exit 0
+          fi
 
+          if [[ -z "${APP_STORE_CONNECT_API_KEY_ID:-}" || -z "${APP_STORE_CONNECT_ISSUER_ID:-}" || -z "${APP_STORE_CONNECT_API_KEY_P8:-}" ]]; then
             echo "Notarization credentials are not configured; skipping notarization."
             exit 0
           fi
