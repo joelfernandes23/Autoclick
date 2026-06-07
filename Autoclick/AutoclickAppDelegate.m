@@ -70,6 +70,7 @@
 - (void)awakeFromNib {
     clicker = [[Clicker alloc] initWithHost:self];
     [window setDelegate:(id<NSWindowDelegate>)self];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     [rateSelector syncWithStepper];
     [startAfterSelector syncWithStepper];
     [stopAfterSelector syncWithStepper];
@@ -273,10 +274,11 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification
 {
-    // Insert code here to initialize your application
+    [self applicationShouldHandleReopen:NSApp hasVisibleWindows:YES];
 }
 
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)flag {
+    [NSApp activateIgnoringOtherApps:YES];
     [window makeKeyAndOrderFront:self];
     
     return YES;
@@ -333,7 +335,12 @@
 #pragma mark - Menu Bar Status
 
 - (void)installMenuBarStatusItem {
-    menuBarStatusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
+    menuBarOffImage = [self menuBarImageForStatus:@"Off"];
+    menuBarActiveImage = [self menuBarImageForStatus:@"On"];
+    menuBarPausedImage = [self menuBarImageForStatus:@"Paused"];
+    menuBarWaitingImage = [self menuBarImageForStatus:@"Waiting"];
+
+    menuBarStatusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
 
     NSStatusBarButton *button = [menuBarStatusItem button];
     [button setToolTip:@"Autoclick status"];
@@ -364,8 +371,64 @@
 
 - (void)updateMenuBarStatus:(NSString *)status {
     NSStatusBarButton *button = [menuBarStatusItem button];
-    [button setTitle:[NSString stringWithFormat:@"Autoclick: %@", status]];
+    [button setTitle:@""];
+    [button setImage:[self menuBarImageForCurrentStatus:status]];
     [menuBarStateItem setTitle:[NSString stringWithFormat:@"Status: %@", status]];
+    [button setToolTip:[NSString stringWithFormat:@"Autoclick: %@", status]];
+}
+
+- (NSImage *)menuBarImageForCurrentStatus:(NSString *)status {
+    if ([status isEqualToString:@"On"]) return menuBarActiveImage;
+    if ([status isEqualToString:@"Paused"]) return menuBarPausedImage;
+    if ([status isEqualToString:@"Waiting"]) return menuBarWaitingImage;
+    return menuBarOffImage;
+}
+
+- (NSImage *)menuBarImageForStatus:(NSString *)status {
+    NSSize size = NSMakeSize(18, 18);
+    NSImage *image = [[NSImage alloc] initWithSize:size];
+    [image lockFocus];
+
+    NSRect canvas = NSMakeRect(0, 0, size.width, size.height);
+    BOOL active = [status isEqualToString:@"On"];
+    BOOL paused = [status isEqualToString:@"Paused"];
+    BOOL waiting = [status isEqualToString:@"Waiting"];
+
+    if (active) {
+        [[NSColor colorWithCalibratedRed:0.0 green:0.48 blue:1.0 alpha:1.0] setFill];
+        [[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(canvas, 1.0, 1.0)] fill];
+    }
+
+    NSColor *strokeColor = active ? NSColor.whiteColor : NSColor.labelColor;
+    [strokeColor setStroke];
+
+    NSBezierPath *mouse = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(5.0, 2.0, 8.0, 14.0) xRadius:4.0 yRadius:4.0];
+    [mouse setLineWidth:1.6];
+    [mouse stroke];
+
+    NSBezierPath *divider = [NSBezierPath bezierPath];
+    [divider moveToPoint:NSMakePoint(9.0, 3.0)];
+    [divider lineToPoint:NSMakePoint(9.0, 7.0)];
+    [divider setLineWidth:1.2];
+    [divider stroke];
+
+    if (paused || waiting) {
+        [strokeColor setFill];
+
+        if (paused) {
+            NSRect leftBar = NSMakeRect(6.2, 7.1, 1.8, 5.4);
+            NSRect rightBar = NSMakeRect(10.0, 7.1, 1.8, 5.4);
+            [[NSBezierPath bezierPathWithRoundedRect:leftBar xRadius:0.7 yRadius:0.7] fill];
+            [[NSBezierPath bezierPathWithRoundedRect:rightBar xRadius:0.7 yRadius:0.7] fill];
+        } else {
+            NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(7.0, 8.0, 4.0, 4.0)];
+            [dot fill];
+        }
+    }
+
+    [image unlockFocus];
+    [image setTemplate:!active];
+    return image;
 }
 
 #pragma mark - Icon Handling
