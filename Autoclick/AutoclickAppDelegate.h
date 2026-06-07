@@ -4,17 +4,18 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "MBNumberField.h"
-#import "Clicker.h"
+#import "ClickerHost.h"
 #import <ShortcutRecorder/ShortcutRecorder.h>
 
 @class AutoclickAppDelegate;
+@class Clicker;
+@class MBNumberField;
 
 @interface NSApplication (AppDelegate)
 - (AutoclickAppDelegate *)appDelegate;
 @end
 
-@interface AutoclickAppDelegate : NSObject <NSApplicationDelegate> {
+@interface AutoclickAppDelegate : NSObject <NSApplicationDelegate, ClickerHost> {
     __unsafe_unretained NSWindow *window;
     
     BOOL mode;
@@ -30,8 +31,6 @@
     NSUserDefaults* userDefaults;
     
     Clicker* clicker;
-    
-    EventHotKeyRef hotkeyRef;
     
     // Values
     IBOutlet NSPopUpButton* buttonSelector;
@@ -58,10 +57,10 @@
     NSTimer* iconTimer;
 }
 
-@property (assign) IBOutlet NSWindow *window;
-@property (assign) IBOutlet NSButton* modeButton;
-@property (readonly) IBOutlet NSTextField* statusLabel;
-@property (readonly) IBOutlet NSButton* startStopButton;
+@property (nonatomic, assign) IBOutlet NSWindow *window;
+@property (nonatomic, assign) IBOutlet NSButton* modeButton;
+@property (nonatomic, readonly) IBOutlet NSTextField* statusLabel;
+@property (nonatomic, readonly) IBOutlet NSButton* startStopButton;
 
 - (void)startedClicking;
 - (void)stoppedClicking;

@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B201D44C1441A57900F3CB0B /* Clicker.m in Sources */ = {isa = PBXBuildFile; fileRef = B201D44B1441A57900F3CB0B /* Clicker.m */; };
+		B201D44C1441A57900F3CB0B /* Clicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = B201D44B1441A57900F3CB0B /* Clicker.swift */; };
 		B242AB3A26E537D8007EE672 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B242AB3926E537D8007EE672 /* IOKit.framework */; platformFilter = maccatalyst; };
 		B2AC8F4213EC9AB300A890AA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = B2AC8F4013EC9AB300A890AA /* InfoPlist.strings */; };
 		B2AC8F4413EC9AB300A890AA /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = B2AC8F4313EC9AB300A890AA /* main.m */; };
 		B2AC8F4B13EC9AB300A890AA /* AutoclickAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B2AC8F4A13EC9AB300A890AA /* AutoclickAppDelegate.m */; };
 		B2AC8F4E13EC9AB300A890AA /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = B2AC8F4C13EC9AB300A890AA /* MainMenu.xib */; };
-		B2AC8F5613ECAD5800A890AA /* MBNumberField.m in Sources */ = {isa = PBXBuildFile; fileRef = B2AC8F5513ECAD5800A890AA /* MBNumberField.m */; };
+		B2AC8F5613ECAD5800A890AA /* MBNumberField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2AC8F5513ECAD5800A890AA /* MBNumberField.swift */; };
 		B2BBD04925BD749100EEA9DF /* ShortcutRecorder in Frameworks */ = {isa = PBXBuildFile; productRef = B2BBD04825BD749100EEA9DF /* ShortcutRecorder */; };
 		B2E421BB14ACC9A100005139 /* clicking.icns in Resources */ = {isa = PBXBuildFile; fileRef = B2E421B414ACC9A100005139 /* clicking.icns */; };
 		B2E421BC14ACC9A100005139 /* clicking1.icns in Resources */ = {isa = PBXBuildFile; fileRef = B2E421B514ACC9A100005139 /* clicking1.icns */; };
@@ -25,8 +25,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		B201D44A1441A57900F3CB0B /* Clicker.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Clicker.h; sourceTree = "<group>"; };
-		B201D44B1441A57900F3CB0B /* Clicker.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Clicker.m; sourceTree = "<group>"; };
+		B201D44A1441A57900F3CB0B /* ClickerHost.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClickerHost.h; sourceTree = "<group>"; };
+		B201D44B1441A57900F3CB0B /* Clicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Clicker.swift; sourceTree = "<group>"; };
 		B242AB3926E537D8007EE672 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		B2AC8F3313EC9AB300A890AA /* Autoclick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Autoclick.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2AC8F3F13EC9AB300A890AA /* Autoclick-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Autoclick-Info.plist"; sourceTree = "<group>"; };
@@ -35,8 +35,8 @@
 		B2AC8F4513EC9AB300A890AA /* Autoclick-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Autoclick-Prefix.pch"; sourceTree = "<group>"; };
 		B2AC8F4913EC9AB300A890AA /* AutoclickAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AutoclickAppDelegate.h; sourceTree = "<group>"; };
 		B2AC8F4A13EC9AB300A890AA /* AutoclickAppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AutoclickAppDelegate.m; sourceTree = "<group>"; };
-		B2AC8F5413ECAD5800A890AA /* MBNumberField.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MBNumberField.h; sourceTree = "<group>"; };
-		B2AC8F5513ECAD5800A890AA /* MBNumberField.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBNumberField.m; sourceTree = "<group>"; };
+		B2AC8F5413ECAD5800A890AA /* Autoclick-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Autoclick-Bridging-Header.h"; sourceTree = "<group>"; };
+		B2AC8F5513ECAD5800A890AA /* MBNumberField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MBNumberField.swift; sourceTree = "<group>"; };
 		B2BBD04425BD73E000EEA9DF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		B2E421B414ACC9A100005139 /* clicking.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = clicking.icns; sourceTree = "<group>"; };
 		B2E421B514ACC9A100005139 /* clicking1.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = clicking1.icns; sourceTree = "<group>"; };
@@ -93,10 +93,10 @@
 				B2AC8F4913EC9AB300A890AA /* AutoclickAppDelegate.h */,
 				B2AC8F4A13EC9AB300A890AA /* AutoclickAppDelegate.m */,
 				B2AC8F4C13EC9AB300A890AA /* MainMenu.xib */,
-				B2AC8F5413ECAD5800A890AA /* MBNumberField.h */,
-				B2AC8F5513ECAD5800A890AA /* MBNumberField.m */,
-				B201D44A1441A57900F3CB0B /* Clicker.h */,
-				B201D44B1441A57900F3CB0B /* Clicker.m */,
+				B201D44A1441A57900F3CB0B /* ClickerHost.h */,
+				B2AC8F5413ECAD5800A890AA /* Autoclick-Bridging-Header.h */,
+				B2AC8F5513ECAD5800A890AA /* MBNumberField.swift */,
+				B201D44B1441A57900F3CB0B /* Clicker.swift */,
 			);
 			path = Autoclick;
 			sourceTree = "<group>";
@@ -204,8 +204,8 @@
 			files = (
 				B2AC8F4413EC9AB300A890AA /* main.m in Sources */,
 				B2AC8F4B13EC9AB300A890AA /* AutoclickAppDelegate.m in Sources */,
-				B2AC8F5613ECAD5800A890AA /* MBNumberField.m in Sources */,
-				B201D44C1441A57900F3CB0B /* Clicker.m in Sources */,
+				B2AC8F5613ECAD5800A890AA /* MBNumberField.swift in Sources */,
+				B201D44C1441A57900F3CB0B /* Clicker.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,6 +332,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 10;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = PP5UYHJQCD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -343,6 +344,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.Autoclick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Autoclick/Autoclick-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Autoclick-Swift.h";
+				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -356,6 +360,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 10;
+				DEFINES_MODULE = YES;
 				DEVELOPMENT_TEAM = PP5UYHJQCD;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -367,6 +372,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = jp.mahdi.Autoclick;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Autoclick/Autoclick-Bridging-Header.h";
+				SWIFT_OBJC_INTERFACE_HEADER_NAME = "Autoclick-Swift.h";
+				SWIFT_VERSION = 5.0;
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;
@@ -397,10 +405,10 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		B2BBD04725BD749100EEA9DF /* XCRemoteSwiftPackageReference "ShortcutRecorder" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "git://github.com/Kentzo/ShortcutRecorder.git";
+			repositoryURL = "https://github.com/Kentzo/ShortcutRecorder.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 3.3.0;
+				minimumVersion = 3.4.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

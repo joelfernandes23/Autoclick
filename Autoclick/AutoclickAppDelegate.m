@@ -4,6 +4,7 @@
 //
 
 #import "AutoclickAppDelegate.h"
+#import "Autoclick-Swift.h"
 @import IOKit;
 
 @implementation NSApplication (AppDelegate)
@@ -67,7 +68,7 @@
 }
 
 - (void)awakeFromNib {
-    clicker = [[Clicker alloc] init];
+    clicker = [[Clicker alloc] initWithHost:self];
     [window setDelegate:(id<NSWindowDelegate>)self];
     [rateSelector syncWithStepper];
     [startAfterSelector syncWithStepper];
@@ -78,7 +79,7 @@
 
     _defaults = NSUserDefaultsController.sharedUserDefaultsController;
     NSString *keyPath = @"values.shortcut";
-    NSDictionary *options = @{NSValueTransformerNameBindingOption: NSKeyedUnarchiveFromDataTransformerName};
+    NSDictionary *options = @{NSValueTransformerNameBindingOption: NSSecureUnarchiveFromDataTransformerName};
 
     SRShortcutAction *shortcutAction = [SRShortcutAction shortcutActionWithKeyPath:keyPath
                                                                           ofObject:_defaults
