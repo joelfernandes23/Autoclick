@@ -36,6 +36,8 @@ Requirements:
 - macOS
 - Xcode 26.5 or newer
 
+Development workflow notes are in [docs/development.md](docs/development.md).
+
 Resolve packages:
 
 ```sh
