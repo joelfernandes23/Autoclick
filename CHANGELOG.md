@@ -1,6 +1,6 @@
 # Changelog
 
-## [3.1.0-beta.1](https://github.com/joelfernandes23/Autoclick/compare/Autoclick-v3.0.0-beta.1...Autoclick-v3.1.0-beta.1) (2026-06-07)
+## [3.0.0-beta.2](https://github.com/joelfernandes23/Autoclick/compare/v3.0.0-beta.1...v3.0.0-beta.2) (2026-06-07)
 
 
 ### Features
