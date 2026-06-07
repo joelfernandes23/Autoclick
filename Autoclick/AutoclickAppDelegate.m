@@ -71,6 +71,7 @@
     clicker = [[Clicker alloc] initWithHost:self];
     [window setDelegate:(id<NSWindowDelegate>)self];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    [self configureMenuBarUtilityWindow];
     [rateSelector syncWithStepper];
     [startAfterSelector syncWithStepper];
     [stopAfterSelector syncWithStepper];
@@ -116,6 +117,13 @@
     }
     
     [window setDelegate:(id<NSWindowDelegate>)self];
+}
+
+- (void)configureMenuBarUtilityWindow {
+    [window setAnimationBehavior:NSWindowAnimationBehaviorNone];
+    [window setShowsResizeIndicator:NO];
+    [window setStyleMask:([window styleMask] & ~NSWindowStyleMaskMiniaturizable)];
+    [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
 }
 
 - (void)windowWillClose:(NSNotification*)note {
