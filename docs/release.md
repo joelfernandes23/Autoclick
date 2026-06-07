@@ -1,20 +1,36 @@
 # Release Pipeline
 
-The repository has two GitHub Actions workflows:
+The repository has three GitHub Actions workflows:
 
 - `CI` builds Debug and Release on every pull request and on pushes to `master` or `main`.
-- `Release` builds a universal macOS app, packages it as a zip, uploads artifacts, creates a GitHub Release for `v*` tags, and can update a Homebrew tap.
+- `Release Please` opens SemVer release pull requests from conventional commits. It does not publish GitHub Releases.
+- `Release` builds a universal macOS app, packages it as a zip, uploads artifacts, creates immutable GitHub Releases, and can update a Homebrew tap.
 
 ## Required For Releases
 
-Create a tag such as `v2.1.0` and push it:
+Release Please manages release PRs using:
+
+- `release-please-config.json`
+- `.release-please-manifest.json`
+- `CHANGELOG.md`
+- `Autoclick/Version.xcconfig`
+
+Published releases are created by the `Release` workflow so all assets are attached before GitHub release immutability locks the release.
+
+To publish the version recorded in `.release-please-manifest.json`, run the `Release` workflow manually and set `publish_release` to `true`.
+
+You can also create and push a tag such as `v3.0.0-beta.1`:
 
 ```sh
-git tag v2.1.0
-git push origin v2.1.0
+git tag v3.0.0-beta.1
+git push origin v3.0.0-beta.1
 ```
 
-The release workflow will always create a zip artifact. Signing, notarization, and Homebrew publishing are enabled only when the matching secrets or variables exist.
+The release workflow always creates a zip artifact. Published releases require signing and notarization secrets. Manual artifact-only runs can still build unsigned artifacts.
+
+## Release Please Token
+
+Set `RELEASE_PLEASE_TOKEN` to a fine-grained token with repository contents and pull request write access if release PRs should trigger normal CI automatically. Without it, the workflow falls back to `GITHUB_TOKEN`.
 
 ## Signing Secrets
 

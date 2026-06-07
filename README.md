@@ -14,6 +14,7 @@ This repository is a maintained fork of the original archived Autoclick project.
 - Swift migration in progress
 - Apple Silicon and Intel universal builds supported
 - CI builds Debug and universal Release configurations
+- SemVer release PRs prepared by Release Please
 - First maintained release line is planned as `v3.0.0-beta.1`
 
 ## Installation
@@ -83,7 +84,7 @@ If clicking or shortcuts do not work:
 
 ## Release Process
 
-See [docs/release.md](docs/release.md) for signing, notarization, GitHub Releases, and Homebrew tap setup.
+See [docs/release.md](docs/release.md) for SemVer release PRs, signing, notarization, immutable GitHub Releases, and Homebrew tap setup. See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## License
 
