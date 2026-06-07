@@ -28,6 +28,8 @@ git push origin v3.0.0-beta.1
 
 The release workflow always creates a zip artifact. Published releases require signing and notarization secrets. Manual artifact-only runs can still build unsigned artifacts.
 
+Published release runs validate all required Apple and Homebrew secrets before the macOS build starts.
+
 ## Release Please Token
 
 Set `RELEASE_PLEASE_TOKEN` to a fine-grained token with repository contents and pull request write access if release PRs should trigger normal CI automatically. Without it, the workflow falls back to `GITHUB_TOKEN`.
