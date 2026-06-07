@@ -84,6 +84,8 @@ If clicking or shortcuts do not work:
 4. Enable Autoclick under Input Monitoring if prompted.
 5. Restart Autoclick.
 
+If macOS keeps asking for the same permission after it is enabled, remove Autoclick from that Privacy & Security list, add `/Applications/Autoclick.app` again, then quit and reopen Autoclick. This can happen with unsigned beta builds after upgrading.
+
 ## Release Process
 
 See [docs/release.md](docs/release.md) for SemVer release PRs, unsigned beta releases, immutable GitHub Releases, and Homebrew tap setup. See [CHANGELOG.md](CHANGELOG.md) for release notes.
