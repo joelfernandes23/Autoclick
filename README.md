@@ -1,102 +1,131 @@
-# Autoclick 2.0 - [DOWNLOAD](https://tars.mahdi.jp/apps/autoclick.zip)
+# Autoclick
 
-**By [downloading](https://tars.mahdi.jp/apps/autoclick.zip) this app, you agree that it is provided "as is" and that you will receive NO SUPPORT whatsoever. This is a free app made in my free time and I do not owe you anything. Read the FAQ below for more info.**
+[![CI](https://github.com/joelfernandes23/Autoclick/actions/workflows/ci.yml/badge.svg)](https://github.com/joelfernandes23/Autoclick/actions/workflows/ci.yml)
 
-Repository is archived to stop people from creating pull requests to ask dumb questions.
+Autoclick is a macOS utility that simulates mouse clicks when needed. It is configurable, lightweight, and designed for common repeated-click workflows.
 
-## What it is
+This repository is a maintained fork of the original archived Autoclick project. The app name remains Autoclick, and the original GPLv2 license and project history are preserved.
 
-<img src="screenshot.png" width="400" />
+<img src="screenshot.png" width="400" alt="Autoclick screenshot" />
 
-A simple Mac app that simulates mouse clicks when needed. Highly configurable and easy to use.
+## Status
 
-## FAQ
+- Maintained fork
+- Swift migration in progress
+- Apple Silicon and Intel universal builds supported
+- CI builds Debug and universal Release configurations
+- First maintained release line is planned as `v3.0.0-beta.1`
 
-### Is it safe?
+## Installation
 
-Yes.
+Release builds will be published through GitHub Releases.
 
-### Why does it ask for Accessibility permission?
+Homebrew Cask support is planned through a tap:
 
-The system requires it to let the app "click".
+```sh
+brew install --cask joelfernandes23/tap/autoclick
+```
 
-### I gave it Accessibility permission, but it doesn't click
+The Homebrew cask will be enabled once the first signed and notarized release is available.
 
-Restart your Mac.
+## Build From Source
 
-### It requires macOS 10.14, but I have 10.13 or whatever
+Requirements:
 
-[Download the older version](https://tars.mahdi.jp/apps/autoclick-1.0.zip), then right-click on the app and select "Open" to open it.
+- macOS
+- Xcode 26.5 or newer
 
-### It will not let me set a hotkey!
+Resolve packages:
 
-You need to add a modifier to your hotkey like command, alt, or control.
+```sh
+xcodebuild -resolvePackageDependencies \
+  -project Autoclick.xcodeproj \
+  -scheme Autoclick
+```
 
-Try command+L, it should work.
+Build Debug:
 
-### Can you make it accept just one key for the hotkey?
+```sh
+xcodebuild build \
+  -project Autoclick.xcodeproj \
+  -scheme Autoclick \
+  -configuration Debug \
+  -destination "platform=macOS" \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO
+```
 
-No, it's impossible. (and stupid because you won't be able to use that key anymore)
+Build a universal Release app:
 
-### I want more clicks per second
+```sh
+xcodebuild build \
+  -project Autoclick.xcodeproj \
+  -scheme Autoclick \
+  -configuration Release \
+  -destination "generic/platform=macOS" \
+  ARCHS="arm64 x86_64" \
+  ONLY_ACTIVE_ARCH=NO \
+  CODE_SIGNING_ALLOWED=NO \
+  CODE_SIGNING_REQUIRED=NO
+```
 
-I found that above 900 the system will freeze so 900 is the limit.
+## Permissions
 
-### Can you make a Windows version?
+Autoclick needs macOS Accessibility permission so it can post click events. Recent macOS versions may also require Input Monitoring so global shortcuts and pause controls work reliably.
 
-No, I can't. I would have to quit my job, go to school to learn Windows development, then spend months making it, so no. Also, Windows sucks.
+If clicking or shortcuts do not work:
 
-### Can I suggest a feature?
+1. Open System Settings.
+2. Go to Privacy & Security.
+3. Enable Autoclick under Accessibility.
+4. Enable Autoclick under Input Monitoring if prompted.
+5. Restart Autoclick.
 
-No.
+## Release Process
 
-### Can you fix a bug?
+See [docs/release.md](docs/release.md) for signing, notarization, GitHub Releases, and Homebrew tap setup.
 
-No.
+## License
 
-### Can I contact you for anything about this app?
-
-No. I will not respond.
-
-### Is this app still in development?
-
-No.
-
-### Why?
-
-I've had enough of entitled Roblox kids.
+Autoclick is licensed under GPLv2. See [LICENSE](LICENSE).
 
 ## Changelog
+
+### 3.0.0-beta.1
+
+- Planned first maintained fork prerelease.
+- Migrates core clicker and number field logic to Swift.
+- Adds CI and release automation for universal macOS builds.
+- Updates ShortcutRecorder dependency resolution through SwiftPM.
 
 ### 2.0.5 (2022/1/28)
 
 - Increase the maximum clicks per second to 900.
-- This is the last version of this app
+- Last release from the original archived project.
 
 ### 2.0.4 (2021/9/6)
 
-- Fixed app not remembering your settings between restarts
-- App will now check Input Monitoring permission too, to make sure that you can stop the clicking with keyboard shortcuts/FN key
+- Fixed app not remembering your settings between restarts.
+- App now checks Input Monitoring permission too, to make sure that you can stop the clicking with keyboard shortcuts/FN key.
 
 ### 2.0.3 (2021/2/23)
 
-- Allow hotkeys without modifiers, [#2](https://github.com/inket/Autoclick/issues/2)
-
+- Allow hotkeys without modifiers, [#2](https://github.com/inket/Autoclick/issues/2).
 
 ### 2.0.2 (2021/2/17)
 
-- Better fix for multi-monitor setups, [#1](https://github.com/inket/Autoclick/issues/1)
+- Better fix for multi-monitor setups, [#1](https://github.com/inket/Autoclick/issues/1).
 
 ### 2.0.1 (2021/2/6)
 
-- Fixed cursor jumping in multi-monitor setups, #1
+- Fixed cursor jumping in multi-monitor setups, #1.
 
 ### 2.0 (2021)
 
-- Codesigned & notarized so that it's trusted by new versions of macOS
-- Modernized codebase & added Apple Silicon support
-- Will now display the accessibility permission popup if you haven't allowed it yet
+- Codesigned and notarized so that it is trusted by new versions of macOS.
+- Modernized codebase and added Apple Silicon support.
+- Displays the Accessibility permission prompt if permission has not been granted yet.
 
-### [1.0 (2011)](https://tars.mahdi.jp/apps/autoclick-1.0.zip)
+### 1.0 (2011)
 
-- Initial version
+- Initial version.
