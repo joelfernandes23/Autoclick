@@ -4,7 +4,7 @@ The repository has three GitHub Actions workflows:
 
 - `CI` builds Debug and Release on every pull request and on pushes to `master` or `main`.
 - `Release Please` opens SemVer release pull requests from conventional commits. It does not publish GitHub Releases.
-- `Release` builds a universal macOS app, packages it as a zip, uploads artifacts, creates immutable GitHub Releases, and can update a Homebrew tap.
+- `Release` builds a universal macOS app, applies an ad-hoc signature when no Developer ID certificate is configured, packages it as a zip, uploads artifacts, creates immutable GitHub Releases, and can update a Homebrew tap.
 
 ## Required For Releases
 
@@ -26,17 +26,17 @@ git tag v3.0.0-beta.1
 git push origin v3.0.0-beta.1
 ```
 
-The release workflow always creates a zip artifact. Published releases require signing and notarization secrets. Manual artifact-only runs can still build unsigned artifacts.
+The release workflow always creates a zip artifact. Published beta releases can be shipped without a paid Apple Developer account. When Developer ID signing is not configured, the workflow applies an ad-hoc signature and skips notarization.
 
-Published release runs validate all required Apple and Homebrew secrets before the macOS build starts.
+Unsigned and non-notarized builds may show a macOS Gatekeeper warning on first launch.
 
 ## Release Please Token
 
 Set `RELEASE_PLEASE_TOKEN` to a fine-grained token with repository contents and pull request write access if release PRs should trigger normal CI automatically. Without it, the workflow falls back to `GITHUB_TOKEN`.
 
-## Signing Secrets
+## Optional Signing Secrets
 
-Published releases require a Developer ID Application certificate from the Apple Developer account. Export that certificate from Keychain Access as a password-protected `.p12`.
+Developer ID signing is optional. It requires a paid Apple Developer account and a Developer ID Application certificate. Export that certificate from Keychain Access as a password-protected `.p12`.
 
 The local machine should show a valid identity before export:
 
@@ -44,16 +44,16 @@ The local machine should show a valid identity before export:
 security find-identity -v -p codesigning
 ```
 
-Set these repository secrets to sign the app:
+Set these repository secrets to sign the app with Developer ID:
 
 - `MACOS_CERTIFICATE_P12`: base64-encoded Developer ID Application certificate exported as `.p12`
 - `MACOS_CERTIFICATE_PASSWORD`: password for the `.p12`
 - `MACOS_KEYCHAIN_PASSWORD`: temporary CI keychain password
 - `DEVELOPER_ID_APPLICATION`: signing identity name, for example `Developer ID Application: Example Team (TEAMID)`
 
-## Notarization Secrets
+## Optional Notarization Secrets
 
-Set these repository secrets to notarize the signed app:
+Notarization is optional and requires Developer ID signing. Set these repository secrets to notarize the signed app:
 
 - `APP_STORE_CONNECT_API_KEY_ID`
 - `APP_STORE_CONNECT_ISSUER_ID`
@@ -63,7 +63,7 @@ Create the App Store Connect API key in Apple Developer/App Store Connect, downl
 
 ## Configure Apple Secrets
 
-Use the helper script to upload signing and notarization secrets:
+If a paid Apple Developer account is available, use the helper script to upload signing and notarization secrets:
 
 ```sh
 scripts/configure-release-secrets.sh \
@@ -98,7 +98,7 @@ The cask file is rendered by `scripts/render-homebrew-cask.sh`, and CI validates
 
 ## Publish The Beta
 
-After CI is green and Apple secrets are configured, run:
+After CI is green, run:
 
 ```sh
 gh workflow run Release \
@@ -115,3 +115,5 @@ gh run watch --repo joelfernandes23/Autoclick --exit-status
 ```
 
 This creates the immutable GitHub Release and updates the Homebrew tap.
+
+The beta can be published without Apple secrets. In that mode, the app is ad-hoc signed, notarization is skipped, and users may need to approve the app manually in macOS Privacy & Security settings on first launch.
