@@ -246,24 +246,40 @@ jobs:
         if: env.PUBLISH_RELEASE == 'true'
         env:
           HOMEBREW_TAP_REPOSITORY: ${{ vars.HOMEBREW_TAP_REPOSITORY }}
+          HOMEBREW_TAP_DEPLOY_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
           HOMEBREW_CASK_TOKEN: ${{ vars.HOMEBREW_CASK_TOKEN }}
         run: |
           set -euo pipefail
 
           TAP_REPOSITORY="${HOMEBREW_TAP_REPOSITORY:-}"
+          TAP_DEPLOY_KEY="${HOMEBREW_TAP_DEPLOY_KEY:-}"
           TAP_TOKEN="${HOMEBREW_TAP_TOKEN:-}"
           CASK_TOKEN="${HOMEBREW_CASK_TOKEN:-autoclick}"
           CASK_PATH="Casks/${CASK_TOKEN}.rb"
           RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG_NAME}/Autoclick-${VERSION}.zip"
           SHA256="$(shasum -a 256 "$ZIP_PATH" | awk '{print $1}')"
 
-          if [[ -z "$TAP_REPOSITORY" || -z "$TAP_TOKEN" ]]; then
+          if [[ -z "$TAP_REPOSITORY" ]]; then
             echo "Homebrew tap is not configured; skipping tap update."
             exit 0
           fi
 
-          git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPOSITORY}.git" "$RUNNER_TEMP/homebrew-tap"
+          if [[ -n "$TAP_DEPLOY_KEY" ]]; then
+            KEY_PATH="$RUNNER_TEMP/homebrew-tap-deploy-key"
+            mkdir -p "$HOME/.ssh"
+            printf "%s\n" "$TAP_DEPLOY_KEY" > "$KEY_PATH"
+            chmod 600 "$KEY_PATH"
+            ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+            export GIT_SSH_COMMAND="ssh -i $KEY_PATH -o IdentitiesOnly=yes"
+            git clone "git@github.com:${TAP_REPOSITORY}.git" "$RUNNER_TEMP/homebrew-tap"
+          elif [[ -n "$TAP_TOKEN" ]]; then
+            git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPOSITORY}.git" "$RUNNER_TEMP/homebrew-tap"
+          else
+            echo "Homebrew tap credential is not configured; skipping tap update."
+            exit 0
+          fi
+
           cd "$RUNNER_TEMP/homebrew-tap"
           mkdir -p Casks
 
