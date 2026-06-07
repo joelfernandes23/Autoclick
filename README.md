@@ -74,14 +74,14 @@ xcodebuild build \
 
 ## Permissions
 
-Autoclick needs macOS Accessibility permission so it can post click events. Recent macOS versions may also require Input Monitoring so global shortcuts and pause controls work reliably.
+Autoclick needs macOS Accessibility permission so it can post click events. It also needs Input Monitoring so global shortcuts and pause controls work reliably.
 
 If clicking or shortcuts do not work:
 
 1. Open System Settings.
 2. Go to Privacy & Security.
 3. Enable Autoclick under Accessibility.
-4. Enable Autoclick under Input Monitoring if prompted.
+4. Enable Autoclick under Input Monitoring.
 5. Restart Autoclick.
 
 If macOS keeps asking for the same permission after it is enabled, remove Autoclick from that Privacy & Security list, add `/Applications/Autoclick.app` again, then quit and reopen Autoclick. This can happen with unsigned beta builds after upgrading.
