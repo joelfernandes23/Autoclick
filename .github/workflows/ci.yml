@@ -8,18 +8,79 @@ on:
       - main
 
 jobs:
-  build:
-    name: Build
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      cask: ${{ steps.classify.outputs.cask }}
+      xcode: ${{ steps.classify.outputs.xcode }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: classify
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PUSH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            BASE_SHA="$PR_BASE_SHA"
+            HEAD_SHA="$PR_HEAD_SHA"
+          else
+            BASE_SHA="$BEFORE_SHA"
+            HEAD_SHA="$PUSH_SHA"
+          fi
+
+          if [[ -z "$BASE_SHA" || "$BASE_SHA" =~ ^0+$ ]]; then
+            git ls-tree -r --name-only "$HEAD_SHA" > "$RUNNER_TEMP/changed-files.txt"
+          else
+            git diff --name-only "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/changed-files.txt"
+          fi
+
+          cask=false
+          xcode=false
+
+          while IFS= read -r path; do
+            case "$path" in
+              .github/workflows/ci.yml|Autoclick.xcodeproj/*|Autoclick/*|Package.resolved)
+                xcode=true
+                ;;
+            esac
+
+            case "$path" in
+              .github/workflows/ci.yml|.github/workflows/release.yml|scripts/render-homebrew-cask.sh)
+                cask=true
+                ;;
+            esac
+          done < "$RUNNER_TEMP/changed-files.txt"
+
+          echo "Changed files:"
+          sed 's/^/- /' "$RUNNER_TEMP/changed-files.txt"
+
+          echo "cask=$cask" >> "$GITHUB_OUTPUT"
+          echo "xcode=$xcode" >> "$GITHUB_OUTPUT"
+
+  macos:
+    name: macOS checks
+    needs: changes
+    if: needs.changes.outputs.cask == 'true' || needs.changes.outputs.xcode == 'true'
     runs-on: macos-latest
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Show Xcode version
-        run: xcodebuild -version
-
       - name: Validate Homebrew cask template
+        if: needs.changes.outputs.cask == 'true'
         run: |
           set -euo pipefail
 
@@ -46,13 +107,19 @@ jobs:
             brew style --cask "$TAP_ROOT/Casks/autoclick.rb"
           fi
 
+      - name: Show Xcode version
+        if: needs.changes.outputs.xcode == 'true'
+        run: xcodebuild -version
+
       - name: Resolve packages
+        if: needs.changes.outputs.xcode == 'true'
         run: |
           xcodebuild -resolvePackageDependencies \
             -project Autoclick.xcodeproj \
             -scheme Autoclick
 
       - name: Build Debug
+        if: needs.changes.outputs.xcode == 'true'
         run: |
           xcodebuild build \
             -project Autoclick.xcodeproj \
@@ -63,6 +130,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO
 
       - name: Build Release
+        if: needs.changes.outputs.xcode == 'true'
         run: |
           xcodebuild build \
             -project Autoclick.xcodeproj \
@@ -73,3 +141,37 @@ jobs:
             ONLY_ACTIVE_ARCH=NO \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
+
+  build:
+    name: Build
+    needs:
+      - changes
+      - macos
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check CI result
+        run: |
+          set -euo pipefail
+
+          changes_result="${{ needs.changes.result }}"
+          macos_result="${{ needs.macos.result }}"
+
+          echo "Detect changes result: $changes_result"
+          echo "macOS checks result: $macos_result"
+
+          if [[ "$changes_result" != "success" ]]; then
+            echo "::error::Change detection failed."
+            exit 1
+          fi
+
+          case "$macos_result" in
+            success|skipped)
+              echo "Required CI checks passed."
+              ;;
+            *)
+              echo "::error::macOS checks failed."
+              exit 1
+              ;;
+          esac
