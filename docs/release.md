@@ -34,6 +34,14 @@ Set `RELEASE_PLEASE_TOKEN` to a fine-grained token with repository contents and 
 
 ## Signing Secrets
 
+Published releases require a Developer ID Application certificate from the Apple Developer account. Export that certificate from Keychain Access as a password-protected `.p12`.
+
+The local machine should show a valid identity before export:
+
+```sh
+security find-identity -v -p codesigning
+```
+
 Set these repository secrets to sign the app:
 
 - `MACOS_CERTIFICATE_P12`: base64-encoded Developer ID Application certificate exported as `.p12`
@@ -49,6 +57,29 @@ Set these repository secrets to notarize the signed app:
 - `APP_STORE_CONNECT_ISSUER_ID`
 - `APP_STORE_CONNECT_API_KEY_P8`
 
+Create the App Store Connect API key in Apple Developer/App Store Connect, download the `.p8` file once, and keep the key id and issuer id.
+
+## Configure Apple Secrets
+
+Use the helper script to upload signing and notarization secrets:
+
+```sh
+scripts/configure-release-secrets.sh \
+  --certificate ~/Desktop/DeveloperIDApplication.p12 \
+  --developer-id "Developer ID Application: Example Team (TEAMID)" \
+  --app-store-key-id ABC123DEFG \
+  --app-store-issuer-id 00000000-0000-0000-0000-000000000000 \
+  --app-store-key ~/Downloads/AuthKey_ABC123DEFG.p8
+```
+
+The script prompts for the `.p12` password and generates a temporary CI keychain password when one is not provided.
+
+Confirm all release secret names are present:
+
+```sh
+gh secret list --repo joelfernandes23/Autoclick
+```
+
 ## Homebrew Publishing
 
 Create a tap repository, for example `owner/homebrew-tap`, then set:
@@ -60,3 +91,23 @@ Create a tap repository, for example `owner/homebrew-tap`, then set:
 The workflow also supports `HOMEBREW_TAP_TOKEN` as an HTTPS token fallback, but a tap-scoped deploy key is preferred.
 
 When a `v*` tag release succeeds, the workflow writes or updates `Casks/autoclick.rb` in the tap.
+
+## Publish The Beta
+
+After CI is green and Apple secrets are configured, run:
+
+```sh
+gh workflow run Release \
+  --repo joelfernandes23/Autoclick \
+  --ref master \
+  -f version=3.0.0-beta.1 \
+  -f publish_release=true
+```
+
+Watch the run:
+
+```sh
+gh run watch --repo joelfernandes23/Autoclick --exit-status
+```
+
+This creates the immutable GitHub Release and updates the Homebrew tap.
