@@ -54,7 +54,9 @@ Set these repository secrets to notarize the signed app:
 Create a tap repository, for example `owner/homebrew-tap`, then set:
 
 - Repository variable `HOMEBREW_TAP_REPOSITORY`: `owner/homebrew-tap`
-- Repository secret `HOMEBREW_TAP_TOKEN`: token with write access to that tap
+- Repository secret `HOMEBREW_TAP_DEPLOY_KEY`: private SSH deploy key with write access to the tap
 - Repository variable `HOMEBREW_CASK_TOKEN`: optional cask token, defaults to `autoclick`
+
+The workflow also supports `HOMEBREW_TAP_TOKEN` as an HTTPS token fallback, but a tap-scoped deploy key is preferred.
 
 When a `v*` tag release succeeds, the workflow writes or updates `Casks/autoclick.rb` in the tap.
