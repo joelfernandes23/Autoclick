@@ -201,28 +201,12 @@
     }
     else
     {
-        NSDictionary *options = @{(__bridge id) kAXTrustedCheckOptionPrompt : @YES};
-        BOOL accessibilityEnabled = AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef) options);
-
-        if (!accessibilityEnabled) {
-            // Do not enable clicking if accessibility is off because the user might open the Privacy > Accessibility
-            // settings then check the box next to Autoclick which will immediately be unchecked by the automatic
-            // clicking.
+        if (![self ensureAccessibilityPermission]) {
             return;
         }
 
-        if (@available(macOS 10.15, *)) {
-            BOOL inputMonitoringEnabled = IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted;
-
-            // If Input Monitoring is off (should be 'Granted' when Accessibility is checked), request it
-            if (!inputMonitoringEnabled) {
-                IOHIDRequestAccess(kIOHIDRequestTypeListenEvent);
-
-                // Do not enable clicking because the user might not have a way to stop the clicking because the FN
-                // key will not be detected and they might not have a keyboard shortcut set (which might not be detected
-                // either)
-                return;
-            }
+        if (![self ensureInputMonitoringPermission]) {
+            return;
         }
 
         // Button
@@ -255,6 +239,60 @@
         }
         
         [self startedClicking];
+    }
+}
+
+- (BOOL)ensureAccessibilityPermission {
+    if (AXIsProcessTrusted()) {
+        return YES;
+    }
+
+    [statusLabel setStringValue:@"Accessibility permission required."];
+    [self showPermissionAlertWithTitle:@"Allow Accessibility Access"
+                               message:@"Enable Autoclick in System Settings > Privacy & Security > Accessibility, then quit and reopen Autoclick before starting."
+                            settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+                            promptOnce:YES];
+    return NO;
+}
+
+- (BOOL)ensureInputMonitoringPermission {
+    if (@available(macOS 10.15, *)) {
+        if (IOHIDCheckAccess(kIOHIDRequestTypeListenEvent) == kIOHIDAccessTypeGranted) {
+            return YES;
+        }
+
+        [statusLabel setStringValue:@"Input Monitoring permission required."];
+        IOHIDRequestAccess(kIOHIDRequestTypeListenEvent);
+        [self showPermissionAlertWithTitle:@"Allow Input Monitoring"
+                                   message:@"Enable Autoclick in System Settings > Privacy & Security > Input Monitoring, then quit and reopen Autoclick before starting."
+                               settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
+                                promptOnce:NO];
+        return NO;
+    }
+
+    return YES;
+}
+
+- (void)showPermissionAlertWithTitle:(NSString *)title message:(NSString *)message settingsURL:(NSString *)settingsURL promptOnce:(BOOL)promptOnce {
+    if (promptOnce) {
+        NSDictionary *options = @{(__bridge id) kAXTrustedCheckOptionPrompt : @YES};
+        AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef) options);
+    }
+
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:title];
+    [alert setInformativeText:message];
+    [alert addButtonWithTitle:@"Open Settings"];
+    [alert addButtonWithTitle:@"Quit Autoclick"];
+    [alert addButtonWithTitle:@"Not Now"];
+
+    NSModalResponse response = [alert runModal];
+
+    if (response == NSAlertFirstButtonReturn) {
+        NSURL *url = [NSURL URLWithString:settingsURL];
+        [[NSWorkspace sharedWorkspace] openURL:url];
+    } else if (response == NSAlertSecondButtonReturn) {
+        [NSApp terminate:self];
     }
 }
 
