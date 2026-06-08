@@ -594,7 +594,7 @@
     }
 
     [image unlockFocus];
-    [image setTemplate:!activeState];
+    [image setTemplate:NO];
     return image;
 }
 
