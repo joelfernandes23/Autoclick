@@ -563,13 +563,13 @@
     }
 
     NSBezierPath *pointer = [NSBezierPath bezierPath];
-    [pointer moveToPoint:NSMakePoint(4.5, 15.6)];
-    [pointer lineToPoint:NSMakePoint(4.5, 2.4)];
-    [pointer lineToPoint:NSMakePoint(14.3, 11.6)];
-    [pointer lineToPoint:NSMakePoint(9.8, 12.0)];
-    [pointer lineToPoint:NSMakePoint(12.3, 16.1)];
-    [pointer lineToPoint:NSMakePoint(10.1, 17.2)];
-    [pointer lineToPoint:NSMakePoint(7.7, 13.1)];
+    [pointer moveToPoint:NSMakePoint(4.5, 2.4)];
+    [pointer lineToPoint:NSMakePoint(4.5, 15.6)];
+    [pointer lineToPoint:NSMakePoint(14.3, 6.4)];
+    [pointer lineToPoint:NSMakePoint(9.8, 6.0)];
+    [pointer lineToPoint:NSMakePoint(12.3, 1.9)];
+    [pointer lineToPoint:NSMakePoint(10.1, 0.8)];
+    [pointer lineToPoint:NSMakePoint(7.7, 4.9)];
     [pointer closePath];
     [pointer setLineJoinStyle:NSLineJoinStyleRound];
     [pointer setLineWidth:1.0];
