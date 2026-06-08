@@ -69,6 +69,7 @@
     NSTimer* menuBarBlinkTimer;
     BOOL menuBarBlinkOn;
     NSString* menuBarCurrentStatus;
+    NSTitlebarAccessoryViewController* modeTitlebarAccessory;
 }
 
 @property (nonatomic, assign) IBOutlet NSWindow *window;
