@@ -7,6 +7,40 @@
 #import "Autoclick-Swift.h"
 @import IOKit;
 
+static NSValueTransformerName const AutoclickShortcutTransformerName = @"AutoclickShortcutTransformer";
+
+@interface AutoclickShortcutTransformer : NSSecureUnarchiveFromDataTransformer
+@end
+
+@implementation AutoclickShortcutTransformer
+
++ (NSArray<Class> *)allowedTopLevelClasses {
+    return @[
+        SRShortcut.class,
+        NSDictionary.class,
+        NSString.class,
+        NSNumber.class
+    ];
+}
+
+- (id)transformedValue:(id)value {
+    if (!value || (NSNull *)value == NSNull.null) {
+        return nil;
+    }
+
+    if ([value isKindOfClass:SRShortcut.class]) {
+        return value;
+    }
+
+    if ([value isKindOfClass:NSDictionary.class]) {
+        return [SRShortcut shortcutWithDictionary:value];
+    }
+
+    return [super transformedValue:value];
+}
+
+@end
+
 @implementation NSApplication (AppDelegate)
 
 - (AutoclickAppDelegate *)appDelegate {
@@ -80,19 +114,29 @@
     [stopAfterSelector syncWithStepper];
     [ifStationaryForSelector syncWithStepper];
 
-    [shortcutRecorder setAllowedModifierFlags:SRCocoaModifierFlagsMask requiredModifierFlags:0 allowsEmptyModifierFlags:YES];
+    [self registerDefaultShortcutIfNeeded];
+
+    shortcutValidator = [[SRShortcutValidator alloc] initWithDelegate:nil];
+    [shortcutRecorder setDelegate:shortcutValidator];
+    [shortcutRecorder setAllowedModifierFlags:SRCocoaModifierFlagsMask
+                        requiredModifierFlags:(NSEventModifierFlagCommand | NSEventModifierFlagOption)
+                     allowsEmptyModifierFlags:NO];
 
     _defaults = NSUserDefaultsController.sharedUserDefaultsController;
     NSString *keyPath = @"values.shortcut";
-    NSDictionary *options = @{NSValueTransformerNameBindingOption: NSSecureUnarchiveFromDataTransformerName};
+    [NSValueTransformer setValueTransformer:[[AutoclickShortcutTransformer alloc] init]
+                                     forName:AutoclickShortcutTransformerName];
+    NSDictionary *options = @{NSValueTransformerNameBindingOption: AutoclickShortcutTransformerName};
 
-    SRShortcutAction *shortcutAction = [SRShortcutAction shortcutActionWithKeyPath:keyPath
-                                                                          ofObject:_defaults
-                                                                     actionHandler:^BOOL(SRShortcutAction *anAction) {
-        [[NSApp appDelegate] startStop:nil];
+    startStopShortcutAction = [SRShortcutAction shortcutActionWithKeyPath:keyPath
+                                                                 ofObject:_defaults
+                                                            actionHandler:^BOOL(SRShortcutAction *anAction) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSApp appDelegate] startStop:nil];
+        });
         return YES;
     }];
-    [[SRGlobalShortcutMonitor sharedMonitor] addAction:shortcutAction forKeyEvent:SRKeyEventTypeDown];
+    [[SRGlobalShortcutMonitor sharedMonitor] addAction:startStopShortcutAction forKeyEvent:SRKeyEventTypeDown];
 
     [shortcutRecorder bind:NSValueBinding toObject:_defaults withKeyPath:keyPath options:options];
 
@@ -111,6 +155,24 @@
     }
     
     [window setDelegate:(id<NSWindowDelegate>)self];
+}
+
+- (void)registerDefaultShortcutIfNeeded {
+    if ([userDefaults objectForKey:@"shortcut"]) {
+        return;
+    }
+
+    SRShortcut *defaultShortcut = [SRShortcut shortcutWithKeyEquivalent:@"⌃⌥⌘C"];
+    if (!defaultShortcut) {
+        return;
+    }
+
+    NSData *shortcutData = [NSKeyedArchiver archivedDataWithRootObject:defaultShortcut
+                                                 requiringSecureCoding:YES
+                                                                 error:nil];
+    if (shortcutData) {
+        [userDefaults setObject:shortcutData forKey:@"shortcut"];
+    }
 }
 
 - (void)configureMenuBarUtilityWindow {
@@ -211,7 +273,7 @@
     [startAfterCheckbox setToolTip:@"Delay clicking after starting"];
     [stopAfterCheckbox setToolTip:@"Stop clicking after a duration"];
     [ifStationaryCheckbox setToolTip:@"Only click while the pointer has not moved"];
-    [shortcutRecorder setToolTip:@"Keyboard shortcut to start or stop clicking"];
+    [shortcutRecorder setToolTip:@"Global shortcut to start or stop clicking. Defaults to Control-Option-Command-C."];
 }
 
 - (void)styleLabelsInView:(NSView *)view {

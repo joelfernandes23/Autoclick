@@ -70,6 +70,8 @@
     BOOL menuBarBlinkOn;
     NSString* menuBarCurrentStatus;
     NSTitlebarAccessoryViewController* modeTitlebarAccessory;
+    SRShortcutAction* startStopShortcutAction;
+    SRShortcutValidator* shortcutValidator;
 }
 
 @property (nonatomic, assign) IBOutlet NSWindow *window;
