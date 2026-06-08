@@ -48,6 +48,7 @@
     IBOutlet NSButton* ifStationaryCheckbox;
     IBOutlet NSButton* ifStationaryForCheckbox;
     IBOutlet MBNumberField* ifStationaryForSelector;
+    NSPopUpButton* ifStationaryForUnitSelector;
     IBOutlet NSTextField* ifStationaryForText;
     
     IBOutlet SRRecorderControl* shortcutRecorder;

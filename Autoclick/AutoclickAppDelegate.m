@@ -40,6 +40,7 @@
     [state encodeBool:[ifStationaryCheckbox state] forKey:@"ifStationaryCheckbox"];
     [state encodeBool:[ifStationaryForCheckbox state] forKey:@"ifStationaryForCheckbox"];
     [state encodeInteger:[ifStationaryForSelector integerValue] forKey:@"ifStationaryForSelector"];
+    [state encodeInteger:[ifStationaryForUnitSelector indexOfSelectedItem] forKey:@"ifStationaryForUnitSelector"];
 }
 
 - (void)decodeRestorableState:(NSCoder *)state {
@@ -58,6 +59,7 @@
     [ifStationaryCheckbox setState:[state decodeBoolForKey:@"ifStationaryCheckbox"]];
     [ifStationaryForCheckbox setState:[state decodeBoolForKey:@"ifStationaryForCheckbox"]];
     [ifStationaryForSelector setIntegerValue:[state decodeIntegerForKey:@"ifStationaryForSelector"]];
+    [ifStationaryForUnitSelector selectItemAtIndex:[state decodeIntegerForKey:@"ifStationaryForUnitSelector"]];
     
     [rateSelector syncWithStepper];
     [startAfterSelector syncWithStepper];
@@ -149,12 +151,28 @@
     [startStopButton setControlSize:NSControlSizeRegular];
     [startStopButton setBezelStyle:NSBezelStyleRounded];
     [self updateStartStopButtonForClicking:NO];
+
+    [self configureStationaryUnitSelector];
 }
 
 - (void)updateStartStopButtonForClicking:(BOOL)isClicking {
     if ([startStopButton respondsToSelector:@selector(setBezelColor:)]) {
         [startStopButton setBezelColor:isClicking ? NSColor.systemRedColor : NSColor.controlAccentColor];
     }
+}
+
+- (void)configureStationaryUnitSelector {
+    ifStationaryForUnitSelector = [[NSPopUpButton alloc] initWithFrame:NSMakeRect(146.0, 58.0, 91.0, 26.0) pullsDown:NO];
+    [ifStationaryForUnitSelector addItemsWithTitles:@[@"seconds", @"minutes"]];
+    [[ifStationaryForUnitSelector cell] setBezelStyle:NSBezelStyleRounded];
+    [ifStationaryForUnitSelector setControlSize:NSControlSizeRegular];
+    [ifStationaryForUnitSelector setEnabled:[ifStationaryCheckbox state]];
+
+    NSView *advancedContentView = [advancedBox contentView];
+    [advancedContentView addSubview:ifStationaryForUnitSelector];
+
+    [ifStationaryForText setStringValue:@"or longer"];
+    [ifStationaryForText setFrame:NSMakeRect(240.0, 64.0, 74.0, 17.0)];
 }
 
 - (void)windowWillClose:(NSNotification*)note {
@@ -278,7 +296,8 @@
                         
             NSInteger stopAfter = ([stopAfterCheckbox state])?([stopAfterSelector intValue]*(([stopAfterUnitSelector indexOfSelectedItem]==0)?1:60)):0;
                         
-            NSInteger stationaryFor = ([ifStationaryCheckbox state])?([ifStationaryForCheckbox state]?[ifStationaryForSelector intValue]:1):0;
+            NSInteger stationaryUnit = ([ifStationaryForUnitSelector indexOfSelectedItem] == 0) ? 1 : 60;
+            NSInteger stationaryFor = ([ifStationaryCheckbox state])?([ifStationaryForCheckbox state]?([ifStationaryForSelector intValue] * stationaryUnit):1):0;
             
             [clicker startClicking:selectedButton rate:rate startAfter:startAfter stopAfter:stopAfter ifStationaryFor:stationaryFor];
         }
@@ -390,6 +409,7 @@
         [ifStationaryForCheckbox setEnabled:[ifStationaryCheckbox state]];
         [ifStationaryForSelector setEnabled:[ifStationaryCheckbox state]];
         [[ifStationaryForSelector stepper] setEnabled:[ifStationaryCheckbox state]];
+        [ifStationaryForUnitSelector setEnabled:[ifStationaryCheckbox state]];
         
         if ([ifStationaryCheckbox state])
             [ifStationaryForText setTextColor:[NSColor textColor]];
