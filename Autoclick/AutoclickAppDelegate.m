@@ -314,7 +314,7 @@
 
     [statusLabel setStringValue:@"Accessibility permission required."];
     [self showPermissionAlertWithTitle:@"Allow Accessibility Access"
-                               message:@"Enable Autoclick in System Settings > Privacy & Security > Accessibility, then quit and reopen Autoclick before starting."
+                               message:@"Enable Autoclick in System Settings > Privacy & Security > Accessibility. Autoclick will quit after opening Settings so macOS can apply the permission on the next launch."
                             settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
                             promptOnce:YES];
     return NO;
@@ -329,7 +329,7 @@
         [statusLabel setStringValue:@"Input Monitoring permission required."];
         IOHIDRequestAccess(kIOHIDRequestTypeListenEvent);
         [self showPermissionAlertWithTitle:@"Allow Input Monitoring"
-                                   message:@"Enable Autoclick in System Settings > Privacy & Security > Input Monitoring, then quit and reopen Autoclick before starting."
+                                   message:@"Enable Autoclick in System Settings > Privacy & Security > Input Monitoring. Autoclick will quit after opening Settings so macOS can apply the permission on the next launch."
                                settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
                                 promptOnce:NO];
         return NO;
@@ -347,7 +347,7 @@
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:title];
     [alert setInformativeText:message];
-    [alert addButtonWithTitle:@"Open Settings"];
+    [alert addButtonWithTitle:@"Open Settings & Quit"];
     [alert addButtonWithTitle:@"Quit Autoclick"];
     [alert addButtonWithTitle:@"Not Now"];
 
