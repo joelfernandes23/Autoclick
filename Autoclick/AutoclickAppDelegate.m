@@ -314,9 +314,8 @@
 
     [statusLabel setStringValue:@"Accessibility permission required."];
     [self showPermissionAlertWithTitle:@"Allow Accessibility Access"
-                               message:@"Enable Autoclick in System Settings > Privacy & Security > Accessibility. Autoclick will quit after opening Settings so macOS can apply the permission on the next launch."
-                            settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-                            promptOnce:YES];
+                               message:@"Enable Autoclick in System Settings > Privacy & Security > Accessibility, then return to Autoclick and click Start again."
+                            settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"];
     return NO;
 }
 
@@ -327,27 +326,20 @@
         }
 
         [statusLabel setStringValue:@"Input Monitoring permission required."];
-        IOHIDRequestAccess(kIOHIDRequestTypeListenEvent);
         [self showPermissionAlertWithTitle:@"Allow Input Monitoring"
-                                   message:@"Enable Autoclick in System Settings > Privacy & Security > Input Monitoring. Autoclick will quit after opening Settings so macOS can apply the permission on the next launch."
-                               settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"
-                                promptOnce:NO];
+                                   message:@"Enable Autoclick in System Settings > Privacy & Security > Input Monitoring, then return to Autoclick and click Start again."
+                               settingsURL:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ListenEvent"];
         return NO;
     }
 
     return YES;
 }
 
-- (void)showPermissionAlertWithTitle:(NSString *)title message:(NSString *)message settingsURL:(NSString *)settingsURL promptOnce:(BOOL)promptOnce {
-    if (promptOnce) {
-        NSDictionary *options = @{(__bridge id) kAXTrustedCheckOptionPrompt : @YES};
-        AXIsProcessTrustedWithOptions((__bridge CFDictionaryRef) options);
-    }
-
+- (void)showPermissionAlertWithTitle:(NSString *)title message:(NSString *)message settingsURL:(NSString *)settingsURL {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:title];
     [alert setInformativeText:message];
-    [alert addButtonWithTitle:@"Open Settings & Quit"];
+    [alert addButtonWithTitle:@"Open Settings"];
     [alert addButtonWithTitle:@"Quit Autoclick"];
     [alert addButtonWithTitle:@"Not Now"];
 
@@ -356,7 +348,6 @@
     if (response == NSAlertFirstButtonReturn) {
         NSURL *url = [NSURL URLWithString:settingsURL];
         [[NSWorkspace sharedWorkspace] openURL:url];
-        [NSApp terminate:self];
     } else if (response == NSAlertSecondButtonReturn) {
         [NSApp terminate:self];
     }
