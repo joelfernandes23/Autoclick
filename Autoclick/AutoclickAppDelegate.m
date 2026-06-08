@@ -122,38 +122,120 @@
 }
 
 - (void)configureModernInterface {
-    [window setTitlebarAppearsTransparent:YES];
+    [window setTitleVisibility:NSWindowTitleHidden];
+    [window setTitlebarAppearsTransparent:NO];
     [window setMovableByWindowBackground:YES];
     [window setBackgroundColor:NSColor.windowBackgroundColor];
 
     [modeButton setHidden:YES];
 
-    NSView *frameView = [[window contentView] superview];
+    [self configureModeControl];
+    [self configureWindowSections];
+    [self configureControlStyling];
+    [self configureStationaryUnitSelector];
+}
+
+- (void)configureModeControl {
     modeSegmentedControl = [NSSegmentedControl segmentedControlWithLabels:@[@"Basic", @"Advanced"]
                                                               trackingMode:NSSegmentSwitchTrackingSelectOne
                                                                     target:self
                                                                     action:@selector(changeMode:)];
-    [modeSegmentedControl setSegmentStyle:NSSegmentStyleSeparated];
+    [modeSegmentedControl setSegmentStyle:NSSegmentStyleTexturedRounded];
     [modeSegmentedControl setControlSize:NSControlSizeSmall];
     [modeSegmentedControl setToolTip:@"Switch mode"];
-    [modeSegmentedControl setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [frameView addSubview:modeSegmentedControl];
+    [modeSegmentedControl setFrame:NSMakeRect(0.0, 3.0, 176.0, 24.0)];
 
-    [NSLayoutConstraint activateConstraints:@[
-        [modeSegmentedControl.trailingAnchor constraintEqualToAnchor:frameView.trailingAnchor constant:-10],
-        [modeSegmentedControl.topAnchor constraintEqualToAnchor:frameView.topAnchor constant:6],
-        [modeSegmentedControl.widthAnchor constraintEqualToConstant:168],
-        [modeSegmentedControl.heightAnchor constraintEqualToConstant:26]
-    ]];
+    NSView *accessoryView = [[NSView alloc] initWithFrame:NSMakeRect(0.0, 0.0, 186.0, 30.0)];
+    [accessoryView addSubview:modeSegmentedControl];
+
+    modeTitlebarAccessory = [[NSTitlebarAccessoryViewController alloc] init];
+    [modeTitlebarAccessory setView:accessoryView];
+    [modeTitlebarAccessory setLayoutAttribute:NSLayoutAttributeRight];
+    [window addTitlebarAccessoryViewController:modeTitlebarAccessory];
+}
+
+- (void)configureWindowSections {
+    [topBorder setFillColor:NSColor.separatorColor];
+    [bottomBorder setFillColor:NSColor.separatorColor];
+    [advancedBox setFillColor:NSColor.controlBackgroundColor];
+    [advancedBox setBorderColor:NSColor.clearColor];
+}
+
+- (void)configureControlStyling {
+    [self styleLabelsInView:[window contentView]];
 
     [statusLabel setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightSemibold]];
-    [statusLabel setTextColor:NSColor.secondaryLabelColor];
+    [statusLabel setTextColor:NSColor.labelColor];
 
     [startStopButton setControlSize:NSControlSizeRegular];
     [startStopButton setBezelStyle:NSBezelStyleRounded];
+    [startStopButton setToolTip:@"Start or stop clicking"];
     [self updateStartStopButtonForClicking:NO];
 
-    [self configureStationaryUnitSelector];
+    NSArray<NSPopUpButton *> *popUpButtons = @[
+        buttonSelector,
+        rateUnitSelector,
+        startAfterUnitSelector,
+        stopAfterUnitSelector
+    ];
+    for (NSPopUpButton *popUpButton in popUpButtons) {
+        [popUpButton setControlSize:NSControlSizeRegular];
+        [[popUpButton cell] setBezelStyle:NSBezelStyleRounded];
+    }
+
+    NSArray<NSTextField *> *numberFields = @[
+        rateSelector,
+        startAfterSelector,
+        stopAfterSelector,
+        ifStationaryForSelector
+    ];
+    NSFont *numberFont = [NSFont monospacedDigitSystemFontOfSize:13.0 weight:NSFontWeightRegular];
+    for (NSTextField *numberField in numberFields) {
+        [numberField setFont:numberFont];
+        [numberField setAlignment:NSTextAlignmentRight];
+    }
+
+    NSArray<NSButton *> *checkboxes = @[
+        startAfterCheckbox,
+        stopAfterCheckbox,
+        ifStationaryCheckbox,
+        ifStationaryForCheckbox
+    ];
+    for (NSButton *checkbox in checkboxes) {
+        [checkbox setControlSize:NSControlSizeRegular];
+    }
+
+    [buttonSelector setToolTip:@"Mouse button to click"];
+    [rateSelector setToolTip:@"Number of clicks"];
+    [rateUnitSelector setToolTip:@"Click rate unit"];
+    [startAfterCheckbox setToolTip:@"Delay clicking after starting"];
+    [stopAfterCheckbox setToolTip:@"Stop clicking after a duration"];
+    [ifStationaryCheckbox setToolTip:@"Only click while the pointer has not moved"];
+    [shortcutRecorder setToolTip:@"Keyboard shortcut to start or stop clicking"];
+}
+
+- (void)styleLabelsInView:(NSView *)view {
+    for (NSView *subview in [view subviews]) {
+        if ([subview isKindOfClass:[NSTextField class]]) {
+            NSTextField *textField = (NSTextField *)subview;
+            if (![textField isEditable] && ![textField isSelectable]) {
+                [textField setBordered:NO];
+                [textField setDrawsBackground:NO];
+
+                if (textField == statusLabel) {
+                    [textField setTextColor:NSColor.labelColor];
+                } else if ([[textField font] pointSize] <= [NSFont smallSystemFontSize]) {
+                    [textField setTextColor:NSColor.secondaryLabelColor];
+                } else if ([[textField cell] isEnabled]) {
+                    [textField setTextColor:NSColor.labelColor];
+                } else {
+                    [textField setTextColor:NSColor.disabledControlTextColor];
+                }
+            }
+        }
+
+        [self styleLabelsInView:subview];
+    }
 }
 
 - (void)updateStartStopButtonForClicking:(BOOL)isClicking {
@@ -167,6 +249,7 @@
     [ifStationaryForUnitSelector addItemsWithTitles:@[@"seconds", @"minutes"]];
     [[ifStationaryForUnitSelector cell] setBezelStyle:NSBezelStyleRounded];
     [ifStationaryForUnitSelector setControlSize:NSControlSizeRegular];
+    [ifStationaryForUnitSelector setToolTip:@"Stationary duration unit"];
     [ifStationaryForUnitSelector setEnabled:[ifStationaryCheckbox state]];
 
     NSView *advancedContentView = [advancedBox contentView];
