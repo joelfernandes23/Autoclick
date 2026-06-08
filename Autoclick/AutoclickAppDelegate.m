@@ -299,6 +299,7 @@
     if (response == NSAlertFirstButtonReturn) {
         NSURL *url = [NSURL URLWithString:settingsURL];
         [[NSWorkspace sharedWorkspace] openURL:url];
+        [NSApp terminate:self];
     } else if (response == NSAlertSecondButtonReturn) {
         [NSApp terminate:self];
     }
