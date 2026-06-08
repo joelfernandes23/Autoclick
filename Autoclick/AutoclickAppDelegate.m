@@ -116,8 +116,9 @@
 - (void)configureMenuBarUtilityWindow {
     [window setAnimationBehavior:NSWindowAnimationBehaviorNone];
     [window setShowsResizeIndicator:NO];
-    [window setStyleMask:([window styleMask] & ~NSWindowStyleMaskMiniaturizable)];
+    [window setStyleMask:([window styleMask] & ~(NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable))];
     [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+    [[window standardWindowButton:NSWindowZoomButton] setHidden:YES];
 }
 
 - (void)configureModernInterface {
