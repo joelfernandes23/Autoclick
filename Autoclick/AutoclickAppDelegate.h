@@ -48,6 +48,7 @@
     IBOutlet NSButton* ifStationaryCheckbox;
     IBOutlet NSButton* ifStationaryForCheckbox;
     IBOutlet MBNumberField* ifStationaryForSelector;
+    NSPopUpButton* ifStationaryForUnitSelector;
     IBOutlet NSTextField* ifStationaryForText;
     
     IBOutlet SRRecorderControl* shortcutRecorder;
@@ -56,13 +57,18 @@
     NSInteger iconIndex;
     NSTimer* iconTimer;
 
+    NSSegmentedControl* modeSegmentedControl;
     NSStatusItem* menuBarStatusItem;
     NSMenuItem* menuBarStateItem;
     NSMenuItem* menuBarStartStopItem;
     NSImage* menuBarOffImage;
     NSImage* menuBarActiveImage;
+    NSImage* menuBarActiveDimImage;
     NSImage* menuBarPausedImage;
     NSImage* menuBarWaitingImage;
+    NSTimer* menuBarBlinkTimer;
+    BOOL menuBarBlinkOn;
+    NSString* menuBarCurrentStatus;
 }
 
 @property (nonatomic, assign) IBOutlet NSWindow *window;
