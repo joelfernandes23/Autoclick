@@ -15,16 +15,31 @@ This repository is a maintained fork of the original archived Autoclick project.
 - Apple Silicon and Intel universal builds supported
 - CI builds Debug and universal Release configurations
 - SemVer release PRs prepared by Release Please
-- First maintained release line is planned as `v3.0.0-beta.1`
+- Maintained releases are currently published on the `v3.0.0-beta.x` line
 
 ## Installation
 
 Release builds are published through GitHub Releases.
 
-Homebrew Cask support is available through a tap:
+### Homebrew Beta
+
+The maintained beta is available as a Homebrew cask from the project tap:
 
 ```sh
 brew install --cask joelfernandes23/tap/autoclick
+```
+
+If the tap is already installed, this also works:
+
+```sh
+brew install --cask autoclick
+```
+
+To upgrade to the latest beta:
+
+```sh
+brew update
+brew upgrade --cask autoclick
 ```
 
 Current beta builds are unsigned and not notarized. macOS may show a Gatekeeper warning on first launch.

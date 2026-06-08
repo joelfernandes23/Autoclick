@@ -7,6 +7,40 @@
 #import "Autoclick-Swift.h"
 @import IOKit;
 
+static NSValueTransformerName const AutoclickShortcutTransformerName = @"AutoclickShortcutTransformer";
+
+@interface AutoclickShortcutTransformer : NSSecureUnarchiveFromDataTransformer
+@end
+
+@implementation AutoclickShortcutTransformer
+
++ (NSArray<Class> *)allowedTopLevelClasses {
+    return @[
+        SRShortcut.class,
+        NSDictionary.class,
+        NSString.class,
+        NSNumber.class
+    ];
+}
+
+- (id)transformedValue:(id)value {
+    if (!value || (NSNull *)value == NSNull.null) {
+        return nil;
+    }
+
+    if ([value isKindOfClass:SRShortcut.class]) {
+        return value;
+    }
+
+    if ([value isKindOfClass:NSDictionary.class]) {
+        return [SRShortcut shortcutWithDictionary:value];
+    }
+
+    return [super transformedValue:value];
+}
+
+@end
+
 @implementation NSApplication (AppDelegate)
 
 - (AutoclickAppDelegate *)appDelegate {
@@ -80,19 +114,29 @@
     [stopAfterSelector syncWithStepper];
     [ifStationaryForSelector syncWithStepper];
 
-    [shortcutRecorder setAllowedModifierFlags:SRCocoaModifierFlagsMask requiredModifierFlags:0 allowsEmptyModifierFlags:YES];
+    [self registerDefaultShortcutIfNeeded];
+
+    shortcutValidator = [[SRShortcutValidator alloc] initWithDelegate:nil];
+    [shortcutRecorder setDelegate:shortcutValidator];
+    [shortcutRecorder setAllowedModifierFlags:SRCocoaModifierFlagsMask
+                        requiredModifierFlags:(NSEventModifierFlagCommand | NSEventModifierFlagOption)
+                     allowsEmptyModifierFlags:NO];
 
     _defaults = NSUserDefaultsController.sharedUserDefaultsController;
     NSString *keyPath = @"values.shortcut";
-    NSDictionary *options = @{NSValueTransformerNameBindingOption: NSSecureUnarchiveFromDataTransformerName};
+    [NSValueTransformer setValueTransformer:[[AutoclickShortcutTransformer alloc] init]
+                                     forName:AutoclickShortcutTransformerName];
+    NSDictionary *options = @{NSValueTransformerNameBindingOption: AutoclickShortcutTransformerName};
 
-    SRShortcutAction *shortcutAction = [SRShortcutAction shortcutActionWithKeyPath:keyPath
-                                                                          ofObject:_defaults
-                                                                     actionHandler:^BOOL(SRShortcutAction *anAction) {
-        [[NSApp appDelegate] startStop:nil];
+    startStopShortcutAction = [SRShortcutAction shortcutActionWithKeyPath:keyPath
+                                                                 ofObject:_defaults
+                                                            actionHandler:^BOOL(SRShortcutAction *anAction) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [[NSApp appDelegate] startStop:nil];
+        });
         return YES;
     }];
-    [[SRGlobalShortcutMonitor sharedMonitor] addAction:shortcutAction forKeyEvent:SRKeyEventTypeDown];
+    [[SRGlobalShortcutMonitor sharedMonitor] addAction:startStopShortcutAction forKeyEvent:SRKeyEventTypeDown];
 
     [shortcutRecorder bind:NSValueBinding toObject:_defaults withKeyPath:keyPath options:options];
 
@@ -111,6 +155,24 @@
     }
     
     [window setDelegate:(id<NSWindowDelegate>)self];
+}
+
+- (void)registerDefaultShortcutIfNeeded {
+    if ([userDefaults objectForKey:@"shortcut"]) {
+        return;
+    }
+
+    SRShortcut *defaultShortcut = [SRShortcut shortcutWithKeyEquivalent:@"⌃⌥⌘C"];
+    if (!defaultShortcut) {
+        return;
+    }
+
+    NSData *shortcutData = [NSKeyedArchiver archivedDataWithRootObject:defaultShortcut
+                                                 requiringSecureCoding:YES
+                                                                 error:nil];
+    if (shortcutData) {
+        [userDefaults setObject:shortcutData forKey:@"shortcut"];
+    }
 }
 
 - (void)configureMenuBarUtilityWindow {
@@ -211,7 +273,7 @@
     [startAfterCheckbox setToolTip:@"Delay clicking after starting"];
     [stopAfterCheckbox setToolTip:@"Stop clicking after a duration"];
     [ifStationaryCheckbox setToolTip:@"Only click while the pointer has not moved"];
-    [shortcutRecorder setToolTip:@"Keyboard shortcut to start or stop clicking"];
+    [shortcutRecorder setToolTip:@"Global shortcut to start or stop clicking. Defaults to Control-Option-Command-C."];
 }
 
 - (void)styleLabelsInView:(NSView *)view {
@@ -520,7 +582,6 @@
 - (void)installMenuBarStatusItem {
     menuBarOffImage = [self menuBarImageForStatus:@"Off"];
     menuBarActiveImage = [self menuBarImageForStatus:@"On"];
-    menuBarActiveDimImage = [self menuBarImageForStatus:@"OnDimmed"];
     menuBarPausedImage = [self menuBarImageForStatus:@"Paused"];
     menuBarWaitingImage = [self menuBarImageForStatus:@"Waiting"];
 
@@ -562,9 +623,9 @@
     [button setToolTip:[NSString stringWithFormat:@"Autoclick: %@", status]];
 
     if ([status isEqualToString:@"On"]) {
-        [self startMenuBarBlinking];
+        [self startMenuBarPulsing];
     } else {
-        [self stopMenuBarBlinking];
+        [self stopMenuBarPulsing];
         [button setImage:[self menuBarImageForCurrentStatus:status]];
     }
 }
@@ -576,65 +637,79 @@
     return menuBarOffImage;
 }
 
-- (void)startMenuBarBlinking {
+- (void)startMenuBarPulsing {
     NSStatusBarButton *button = [menuBarStatusItem button];
-    menuBarBlinkOn = YES;
+    menuBarPulseAlpha = 1.0;
+    menuBarPulseIncreasing = NO;
     [button setImage:menuBarActiveImage];
 
-    if (!menuBarBlinkTimer || ![menuBarBlinkTimer isValid]) {
-        menuBarBlinkTimer = [NSTimer timerWithTimeInterval:0.55
+    if (!menuBarPulseTimer || ![menuBarPulseTimer isValid]) {
+        menuBarPulseTimer = [NSTimer timerWithTimeInterval:0.06
                                                     target:self
-                                                  selector:@selector(toggleMenuBarBlink)
+                                                  selector:@selector(updateMenuBarPulse)
                                                   userInfo:nil
                                                    repeats:YES];
-        [[NSRunLoop mainRunLoop] addTimer:menuBarBlinkTimer forMode:NSRunLoopCommonModes];
+        [[NSRunLoop mainRunLoop] addTimer:menuBarPulseTimer forMode:NSRunLoopCommonModes];
     }
 }
 
-- (void)stopMenuBarBlinking {
-    [menuBarBlinkTimer invalidate];
-    menuBarBlinkTimer = nil;
-    menuBarBlinkOn = NO;
+- (void)stopMenuBarPulsing {
+    [menuBarPulseTimer invalidate];
+    menuBarPulseTimer = nil;
+    menuBarPulseAlpha = 1.0;
+    menuBarPulseIncreasing = NO;
 }
 
-- (void)toggleMenuBarBlink {
+- (void)updateMenuBarPulse {
     if (![menuBarCurrentStatus isEqualToString:@"On"]) {
-        [self stopMenuBarBlinking];
+        [self stopMenuBarPulsing];
         return;
     }
 
-    menuBarBlinkOn = !menuBarBlinkOn;
+    CGFloat minimumAlpha = 0.36;
+    CGFloat maximumAlpha = 1.0;
+    CGFloat step = 0.055;
+
+    menuBarPulseAlpha += menuBarPulseIncreasing ? step : -step;
+    if (menuBarPulseAlpha <= minimumAlpha) {
+        menuBarPulseAlpha = minimumAlpha;
+        menuBarPulseIncreasing = YES;
+    } else if (menuBarPulseAlpha >= maximumAlpha) {
+        menuBarPulseAlpha = maximumAlpha;
+        menuBarPulseIncreasing = NO;
+    }
+
     NSStatusBarButton *button = [menuBarStatusItem button];
-    [button setImage:menuBarBlinkOn ? menuBarActiveImage : menuBarActiveDimImage];
+    [button setImage:[self menuBarImageForStatus:@"On" pulseAlpha:menuBarPulseAlpha]];
 }
 
 - (NSImage *)menuBarImageForStatus:(NSString *)status {
+    return [self menuBarImageForStatus:status pulseAlpha:1.0];
+}
+
+- (NSImage *)menuBarImageForStatus:(NSString *)status pulseAlpha:(CGFloat)pulseAlpha {
     NSSize size = NSMakeSize(18, 18);
     NSImage *image = [[NSImage alloc] initWithSize:size];
     [image lockFocus];
 
     NSRect canvas = NSMakeRect(0, 0, size.width, size.height);
     BOOL active = [status isEqualToString:@"On"];
-    BOOL activeDimmed = [status isEqualToString:@"OnDimmed"];
     BOOL paused = [status isEqualToString:@"Paused"];
     BOOL waiting = [status isEqualToString:@"Waiting"];
-    BOOL activeState = active || activeDimmed;
 
-    if (activeState) {
+    if (active) {
+        CGFloat clampedPulseAlpha = MIN(MAX(pulseAlpha, 0.0), 1.0);
+        CGFloat glowAlpha = 0.22 + (0.78 * clampedPulseAlpha);
         NSColor *glowColor = [NSColor colorWithCalibratedRed:0.0
                                                        green:0.48
                                                         blue:1.0
-                                                       alpha:activeDimmed ? 0.28 : 1.0];
+                                                       alpha:glowAlpha];
         [glowColor setFill];
         [[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(canvas, 1.0, 1.0)] fill];
     }
 
-    NSColor *pointerFillColor = activeState ? NSColor.whiteColor : NSColor.blackColor;
-    NSColor *pointerStrokeColor = activeState ? [[NSColor blackColor] colorWithAlphaComponent:0.22] : NSColor.blackColor;
-    if (activeDimmed) {
-        pointerFillColor = [pointerFillColor colorWithAlphaComponent:0.58];
-        pointerStrokeColor = [pointerStrokeColor colorWithAlphaComponent:0.12];
-    }
+    NSColor *pointerFillColor = active ? NSColor.whiteColor : NSColor.blackColor;
+    NSColor *pointerStrokeColor = active ? [[NSColor blackColor] colorWithAlphaComponent:0.22] : NSColor.blackColor;
 
     NSBezierPath *pointer = [NSBezierPath bezierPath];
     [pointer moveToPoint:NSMakePoint(4.5, 2.4)];
