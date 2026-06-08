@@ -63,11 +63,11 @@
     NSMenuItem* menuBarStartStopItem;
     NSImage* menuBarOffImage;
     NSImage* menuBarActiveImage;
-    NSImage* menuBarActiveDimImage;
     NSImage* menuBarPausedImage;
     NSImage* menuBarWaitingImage;
-    NSTimer* menuBarBlinkTimer;
-    BOOL menuBarBlinkOn;
+    NSTimer* menuBarPulseTimer;
+    CGFloat menuBarPulseAlpha;
+    BOOL menuBarPulseIncreasing;
     NSString* menuBarCurrentStatus;
     NSTitlebarAccessoryViewController* modeTitlebarAccessory;
     SRShortcutAction* startStopShortcutAction;
