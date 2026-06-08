@@ -72,6 +72,7 @@
     [window setDelegate:(id<NSWindowDelegate>)self];
     [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
     [self configureMenuBarUtilityWindow];
+    [self configureModernInterface];
     [rateSelector syncWithStepper];
     [startAfterSelector syncWithStepper];
     [stopAfterSelector syncWithStepper];
@@ -94,16 +95,7 @@
     [shortcutRecorder bind:NSValueBinding toObject:_defaults withKeyPath:keyPath options:options];
 
     [self installMenuBarStatusItem];
-    
-    // Position the mode button in the titlebar
-    NSView *frameView = [[window contentView] superview];
-    [frameView addSubview:modeButton];
-    [modeButton setTranslatesAutoresizingMaskIntoConstraints:NO];
-    [NSLayoutConstraint activateConstraints:@[
-        [modeButton.trailingAnchor constraintEqualToAnchor:frameView.trailingAnchor constant:-6],
-        [modeButton.topAnchor constraintEqualToAnchor:frameView.topAnchor constant:6]
-    ]];
-    
+
     if (![userDefaults boolForKey:@"Advanced"])
         [self setMode:NO];
     else
@@ -124,6 +116,45 @@
     [window setShowsResizeIndicator:NO];
     [window setStyleMask:([window styleMask] & ~NSWindowStyleMaskMiniaturizable)];
     [[window standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
+}
+
+- (void)configureModernInterface {
+    [window setTitlebarAppearsTransparent:YES];
+    [window setMovableByWindowBackground:YES];
+    [window setBackgroundColor:NSColor.windowBackgroundColor];
+
+    [modeButton setHidden:YES];
+
+    NSView *frameView = [[window contentView] superview];
+    modeSegmentedControl = [NSSegmentedControl segmentedControlWithLabels:@[@"Basic", @"Advanced"]
+                                                              trackingMode:NSSegmentSwitchTrackingSelectOne
+                                                                    target:self
+                                                                    action:@selector(changeMode:)];
+    [modeSegmentedControl setSegmentStyle:NSSegmentStyleSeparated];
+    [modeSegmentedControl setControlSize:NSControlSizeSmall];
+    [modeSegmentedControl setToolTip:@"Switch mode"];
+    [modeSegmentedControl setTranslatesAutoresizingMaskIntoConstraints:NO];
+    [frameView addSubview:modeSegmentedControl];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [modeSegmentedControl.trailingAnchor constraintEqualToAnchor:frameView.trailingAnchor constant:-10],
+        [modeSegmentedControl.topAnchor constraintEqualToAnchor:frameView.topAnchor constant:6],
+        [modeSegmentedControl.widthAnchor constraintEqualToConstant:168],
+        [modeSegmentedControl.heightAnchor constraintEqualToConstant:26]
+    ]];
+
+    [statusLabel setFont:[NSFont systemFontOfSize:13.0 weight:NSFontWeightSemibold]];
+    [statusLabel setTextColor:NSColor.secondaryLabelColor];
+
+    [startStopButton setControlSize:NSControlSizeRegular];
+    [startStopButton setBezelStyle:NSBezelStyleRounded];
+    [self updateStartStopButtonForClicking:NO];
+}
+
+- (void)updateStartStopButtonForClicking:(BOOL)isClicking {
+    if ([startStopButton respondsToSelector:@selector(setBezelColor:)]) {
+        [startStopButton setBezelColor:isClicking ? NSColor.systemRedColor : NSColor.controlAccentColor];
+    }
 }
 
 - (void)windowWillClose:(NSNotification*)note {
@@ -158,11 +189,17 @@
 }
 
 - (IBAction)changeMode:(id)sender {
-    [self setMode:!mode];
+    if (sender == modeSegmentedControl) {
+        [self setMode:[modeSegmentedControl selectedSegment] == 1];
+    } else {
+        [self setMode:!mode];
+    }
 }
 
 /* val: YES = Advanced / NO = Basic */
 - (void)setMode:(BOOL)val {
+    [modeSegmentedControl setSelectedSegment:val ? 1 : 0];
+
     if (!val)
     {
         [modeButton setTitle:@"Basic"];
@@ -307,14 +344,18 @@
 
 - (void)startedClicking {
     [modeButton setEnabled:NO];
+    [modeSegmentedControl setEnabled:NO];
     [startStopButton setTitle:@"Stop"];
+    [self updateStartStopButtonForClicking:YES];
     [self updateMenuBarStatus:@"On"];
     [menuBarStartStopItem setTitle:@"Stop Clicking"];
 }
 
 - (void)stoppedClicking {
     [modeButton setEnabled:YES];
+    [modeSegmentedControl setEnabled:YES];
     [startStopButton setTitle:@"Start"];
+    [self updateStartStopButtonForClicking:NO];
     [self updateMenuBarStatus:@"Off"];
     [menuBarStartStopItem setTitle:@"Start Clicking"];
 }
@@ -384,6 +425,7 @@
 - (void)installMenuBarStatusItem {
     menuBarOffImage = [self menuBarImageForStatus:@"Off"];
     menuBarActiveImage = [self menuBarImageForStatus:@"On"];
+    menuBarActiveDimImage = [self menuBarImageForStatus:@"OnDimmed"];
     menuBarPausedImage = [self menuBarImageForStatus:@"Paused"];
     menuBarWaitingImage = [self menuBarImageForStatus:@"Waiting"];
 
@@ -418,10 +460,18 @@
 
 - (void)updateMenuBarStatus:(NSString *)status {
     NSStatusBarButton *button = [menuBarStatusItem button];
+    menuBarCurrentStatus = [status copy];
+
     [button setTitle:@""];
-    [button setImage:[self menuBarImageForCurrentStatus:status]];
     [menuBarStateItem setTitle:[NSString stringWithFormat:@"Status: %@", status]];
     [button setToolTip:[NSString stringWithFormat:@"Autoclick: %@", status]];
+
+    if ([status isEqualToString:@"On"]) {
+        [self startMenuBarBlinking];
+    } else {
+        [self stopMenuBarBlinking];
+        [button setImage:[self menuBarImageForCurrentStatus:status]];
+    }
 }
 
 - (NSImage *)menuBarImageForCurrentStatus:(NSString *)status {
@@ -431,6 +481,38 @@
     return menuBarOffImage;
 }
 
+- (void)startMenuBarBlinking {
+    NSStatusBarButton *button = [menuBarStatusItem button];
+    menuBarBlinkOn = YES;
+    [button setImage:menuBarActiveImage];
+
+    if (!menuBarBlinkTimer || ![menuBarBlinkTimer isValid]) {
+        menuBarBlinkTimer = [NSTimer timerWithTimeInterval:0.55
+                                                    target:self
+                                                  selector:@selector(toggleMenuBarBlink)
+                                                  userInfo:nil
+                                                   repeats:YES];
+        [[NSRunLoop mainRunLoop] addTimer:menuBarBlinkTimer forMode:NSRunLoopCommonModes];
+    }
+}
+
+- (void)stopMenuBarBlinking {
+    [menuBarBlinkTimer invalidate];
+    menuBarBlinkTimer = nil;
+    menuBarBlinkOn = NO;
+}
+
+- (void)toggleMenuBarBlink {
+    if (![menuBarCurrentStatus isEqualToString:@"On"]) {
+        [self stopMenuBarBlinking];
+        return;
+    }
+
+    menuBarBlinkOn = !menuBarBlinkOn;
+    NSStatusBarButton *button = [menuBarStatusItem button];
+    [button setImage:menuBarBlinkOn ? menuBarActiveImage : menuBarActiveDimImage];
+}
+
 - (NSImage *)menuBarImageForStatus:(NSString *)status {
     NSSize size = NSMakeSize(18, 18);
     NSImage *image = [[NSImage alloc] initWithSize:size];
@@ -438,43 +520,60 @@
 
     NSRect canvas = NSMakeRect(0, 0, size.width, size.height);
     BOOL active = [status isEqualToString:@"On"];
+    BOOL activeDimmed = [status isEqualToString:@"OnDimmed"];
     BOOL paused = [status isEqualToString:@"Paused"];
     BOOL waiting = [status isEqualToString:@"Waiting"];
+    BOOL activeState = active || activeDimmed;
 
-    if (active) {
-        [[NSColor colorWithCalibratedRed:0.0 green:0.48 blue:1.0 alpha:1.0] setFill];
+    if (activeState) {
+        NSColor *glowColor = [NSColor colorWithCalibratedRed:0.0
+                                                       green:0.48
+                                                        blue:1.0
+                                                       alpha:activeDimmed ? 0.28 : 1.0];
+        [glowColor setFill];
         [[NSBezierPath bezierPathWithOvalInRect:NSInsetRect(canvas, 1.0, 1.0)] fill];
     }
 
-    NSColor *strokeColor = active ? NSColor.whiteColor : NSColor.labelColor;
-    [strokeColor setStroke];
+    NSColor *pointerFillColor = activeState ? NSColor.whiteColor : NSColor.blackColor;
+    NSColor *pointerStrokeColor = activeState ? [[NSColor blackColor] colorWithAlphaComponent:0.22] : NSColor.blackColor;
+    if (activeDimmed) {
+        pointerFillColor = [pointerFillColor colorWithAlphaComponent:0.58];
+        pointerStrokeColor = [pointerStrokeColor colorWithAlphaComponent:0.12];
+    }
 
-    NSBezierPath *mouse = [NSBezierPath bezierPathWithRoundedRect:NSMakeRect(5.0, 2.0, 8.0, 14.0) xRadius:4.0 yRadius:4.0];
-    [mouse setLineWidth:1.6];
-    [mouse stroke];
+    NSBezierPath *pointer = [NSBezierPath bezierPath];
+    [pointer moveToPoint:NSMakePoint(4.5, 15.6)];
+    [pointer lineToPoint:NSMakePoint(4.5, 2.4)];
+    [pointer lineToPoint:NSMakePoint(14.3, 11.6)];
+    [pointer lineToPoint:NSMakePoint(9.8, 12.0)];
+    [pointer lineToPoint:NSMakePoint(12.3, 16.1)];
+    [pointer lineToPoint:NSMakePoint(10.1, 17.2)];
+    [pointer lineToPoint:NSMakePoint(7.7, 13.1)];
+    [pointer closePath];
+    [pointer setLineJoinStyle:NSLineJoinStyleRound];
+    [pointer setLineWidth:1.0];
 
-    NSBezierPath *divider = [NSBezierPath bezierPath];
-    [divider moveToPoint:NSMakePoint(9.0, 3.0)];
-    [divider lineToPoint:NSMakePoint(9.0, 7.0)];
-    [divider setLineWidth:1.2];
-    [divider stroke];
+    [pointerFillColor setFill];
+    [pointer fill];
+    [pointerStrokeColor setStroke];
+    [pointer stroke];
 
     if (paused || waiting) {
-        [strokeColor setFill];
+        [NSColor.blackColor setFill];
 
         if (paused) {
-            NSRect leftBar = NSMakeRect(6.2, 7.1, 1.8, 5.4);
-            NSRect rightBar = NSMakeRect(10.0, 7.1, 1.8, 5.4);
+            NSRect leftBar = NSMakeRect(10.4, 3.1, 1.8, 5.4);
+            NSRect rightBar = NSMakeRect(13.3, 3.1, 1.8, 5.4);
             [[NSBezierPath bezierPathWithRoundedRect:leftBar xRadius:0.7 yRadius:0.7] fill];
             [[NSBezierPath bezierPathWithRoundedRect:rightBar xRadius:0.7 yRadius:0.7] fill];
         } else {
-            NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(7.0, 8.0, 4.0, 4.0)];
+            NSBezierPath *dot = [NSBezierPath bezierPathWithOvalInRect:NSMakeRect(11.0, 4.0, 4.2, 4.2)];
             [dot fill];
         }
     }
 
     [image unlockFocus];
-    [image setTemplate:!active];
+    [image setTemplate:!activeState];
     return image;
 }
 
